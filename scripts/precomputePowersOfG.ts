@@ -1,0 +1,1 @@
+// TODO: ts or python scripts for precomputing elliptic curve points
