@@ -444,3 +444,32 @@ template BigSubModP(n, k){
         out[i] <==  tmp[i] + flag * add.out[i];
     }
 }
+
+template BigModInv(n, k) {
+    assert(n <= 252);
+    signal input in[k];
+    signal input p[k];
+    signal output out[k];
+
+    // length k
+    var inv[100] = mod_inv(n, k, in, p);
+    for (var i = 0; i < k; i++) {
+        out[i] <-- inv[i];
+    }
+    component mult = BigMult(n, k);
+    for (var i = 0; i < k; i++) {
+        mult.a[i] <== in[i];
+        mult.b[i] <== out[i];
+    }
+    component mod = BigMod(n, k);
+    for (var i = 0; i < 2 * k; i++) {
+        mod.a[i] <== mult.out[i];
+    }
+    for (var i = 0; i < k; i++) {
+        mod.b[i] <== p[i];
+    }
+    mod.mod[0] === 1;
+    for (var i = 1; i < k; i++) {
+        mod.mod[i] === 0;
+    }
+}
