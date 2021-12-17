@@ -1,5 +1,7 @@
 pragma circom 2.0.1;
 
+include "../node_modules/circomlib/circuits/bitify.circom";
+
 include "bigint.circom";
 include "bigint_func.circom";
 
@@ -15,6 +17,11 @@ function get_secp256k1_prime(n, k) {
 }
 
 // requires a[0] != b[0]
+//
+// Implements:
+// lamb = (b[1] - a[1]) / (b[0] - a[0]) % p
+// out[0] = lamb ** 2 - a[0] - b[0] % p
+// out[1] = lamb * (a[0] - out[0]) - a[1] % p
 template Secp256k1AddUnequal(n, k) {
     signal input a[2][k];
     signal input b[2][k];
@@ -43,6 +50,11 @@ template Secp256k1AddUnequal(n, k) {
     var lamb_arr[2][100] = long_div(n, k, sub1_sub0inv, p);
     for (var i = 0; i < k; i++) {
         lambda[i] <-- lamb_arr[1][i];
+    }
+    component range_checks[k];
+    for (var i = 0; i < k; i++) {
+        range_checks[i] = Num2Bits(n);
+        range_checks[i].in <== lambda[i];
     }
 
     component lambda_check = BigMultModP(n, k);
@@ -100,6 +112,28 @@ template Secp256k1AddUnequal(n, k) {
     }
 }
 
+/*
+// a[2][k] represents an elliptic curve point
+// p[k] represents the ECDSA prime
+// all integers are k registers of n bits
+//
+// implements the algo:
+// lamb = 3 * a[0] ** 2 / (2 * a[1]) % p
+// out[0] = (lamb ** 2 - 2 * a[0]) % p
+// out[1] = lamb * (a[0] - out[0]) - a[1] % p
+function point_double(n, k, a, p) {
+    // length 2 * k
+    var lamb_prod1[100] = prod(n, k, a[0], a[0]);
+    // length 2 * k + 1
+    var lamb_prod2[100] = long_scalar_mult(n, 2 * k, 3, lamb_prod1);
+    
+    // length k + 1
+    var lamb_dividend[100] = long_scalar_mult(n, k, 2, a[1]);
+    // length k
+    var lamb_inv[100] = mod_inv(n, k + 1, lamb_dividend, p);
+    
+}
+*/
 
 template Secp256k1ScalarMult(n, k) {
     signal input scalar[k];

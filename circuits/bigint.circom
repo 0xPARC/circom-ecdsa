@@ -346,6 +346,11 @@ template BigMod(n, k) {
         mod[i] <-- longdiv[1][i];
     }
     div[k] <-- longdiv[0][k];
+    component range_checks[k + 1];
+    for (var i = 0; i <= k; i++) {
+        range_checks[i] = Num2Bits(n);
+        range_checks[i].in <== div[i];
+    }
 
     component mul = BigMult(n, k + 1);
     for (var i = 0; i < k; i++) {
@@ -481,6 +486,12 @@ template BigModInv(n, k) {
     for (var i = 0; i < k; i++) {
         out[i] <-- inv[i];
     }
+    component range_checks[k];
+    for (var i = 0; i < k; i++) {
+        range_checks[i] = Num2Bits(n);
+        range_checks[i].in <== out[i];
+    }
+
     component mult = BigMult(n, k);
     for (var i = 0; i < k; i++) {
         mult.a[i] <== in[i];
