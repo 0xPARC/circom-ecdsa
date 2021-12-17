@@ -14,7 +14,8 @@ function get_secp256k1_prime(n, k) {
      return ret;
 }
 
-template Secp256k1Add(n, k) {
+// requires a[0] != b[0]
+template Secp256k1AddUnequal(n, k) {
     signal input a[2][k];
     signal input b[2][k];
 
@@ -98,6 +99,7 @@ template Secp256k1Add(n, k) {
         out[1][i] <== out1.out[i];
     }
 }
+
 
 template Secp256k1ScalarMult(n, k) {
     signal input scalar[k];
