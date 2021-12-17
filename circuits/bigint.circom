@@ -1,7 +1,8 @@
 pragma circom 2.0.1;
 
 include "../node_modules/circomlib/circuits/comparators.circom";
-include "../node_modules/circuits/bitify.circom";
+include "../node_modules/circomlib/circuits/bitify.circom";
+include "../node_modules/circomlib/circuits/gates.circom";
 
 include "bigint_func.circom";
 
@@ -443,6 +444,30 @@ template BigSubModP(n, k){
         tmp[i] <== (1-flag) * sub.out[i];
         out[i] <==  tmp[i] + flag * add.out[i];
     }
+}
+
+template BigMultModP(n, k) {
+    assert(n <= 252);
+    signal input a[k];
+    signal input b[k];
+    signal input p[k];
+    signal output out[k];
+
+    component big_mult = BigMult(n, k);
+    for (var i = 0; i < k; i++) {
+        big_mult.a[i] <== a[i];
+        big_mult.b[i] <== b[i];
+    }
+    component big_mod = BigMod(n, k);   
+    for (var i = 0; i < 2 * k; i++) {
+        big_mod.a[i] <== big_mult.out[i];
+    }
+    for (var i = 0; i < k; i++) {
+        big_mod.b[i] <== p[i];
+    }
+    for (var i = 0; i < k; i++) {
+        out[i] <== big_mod.mod[i];
+    }    
 }
 
 template BigModInv(n, k) {
