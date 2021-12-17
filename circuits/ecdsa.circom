@@ -7,6 +7,7 @@ include "bigint.circom";
 include "secp256k1.circom";
 include "secp256k1_func.circom";
 include "ecdsa_func.circom";
+include "ecdsa_stride_func.circom";
 
 // keys are encoded as (x, y) pairs with each coordinate being
 // encoded with k registers of n bits each
@@ -82,7 +83,7 @@ template ECDSAPrivToPub(n, k) {
 // keys are encoded as (x, y) pairs with each coordinate being
 // encoded with k registers of n bits each
 template ECDSAPrivToPubStride(n, k, stride) {
-    assert(stride == 2 || stride == 3 || stride == 4 || stride == 8);
+    assert(stride >= 2 || stride <= 8);
     signal input privkey[k];
     signal output pubkey[2][k];
     
@@ -97,19 +98,8 @@ template ECDSAPrivToPubStride(n, k, stride) {
         num_strides = num_strides + 1;
     }
     // power[i][j] contains: [j * (1 << stride * i) * G] for 1 <= j < (1 << stride)
-    var powers[258][256][2][100];
-    if (stride == 2) {
-        powers = get_g_pow_stride2_table(86, 3, 258);
-    } 
-    if (stride == 3) {
-        powers = get_g_pow_stride3_table(86, 3, 258);
-    }
-    if (stride == 4) {
-        powers = get_g_pow_stride4_table(86, 3, 260);
-    }
-    if (stride == 8) {
-        powers = get_g_pow_stride8_table(86, 3, 264);
-    }
+    var powers[258][256][2][3];
+    powers = get_g_pow_stride_table(86, 3, 258, stride);
 
     // contains a dummy point to stand in when we are adding 0
     var dummy[2][100];
