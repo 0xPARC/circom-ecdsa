@@ -218,43 +218,49 @@ template BigMultShortLong(n, k) {
 template LongToShortNoEndCarry(n, k) {
     assert(n <= 126);
     signal input in[k];
-    signal output out[k + 1];
+    signal output out[k+1];
 
-    component splits[k];
+    var split[k][3];
     for (var i = 0; i < k; i++) {
-        splits[i] = SplitThree(n, n, log_ceil(k));
-        splits[i].in <== in[i];
+        split[i] = SplitThreeFn(in[i], n, n, n);
     }
 
-    out[0] <== splits[0].small;
-
-    component adder1 = ModSum(n);
-    adder1.a <== splits[1].small;
-    adder1.b <== splits[0].medium;
-    out[1] <== adder1.sum;
-
-    component adders[k - 2];    
-    for (var i = 2; i < k; i++) {
-        adders[i - 2] = ModSumFour(n);
-        adders[i - 2].a <== splits[i].small;
-        adders[i - 2].b <== splits[i - 1].medium;
-        adders[i - 2].c <== splits[i - 2].big;        
-        if (i == 2) {
-            adders[i - 2].d <== adder1.carry;
-        } else {
-            adders[i - 2].d <== adders[i - 3].carry;
+    var carry[k];
+    carry[0] = 0;
+    out[0] <-- split[0][0];
+    if (k > 1) {
+        var sumAndCarry[2] = SplitFn(split[0][1] + split[1][0], n, n);
+        out[1] <-- sumAndCarry[0];
+        carry[1] = sumAndCarry[1];
+    }
+    if (k > 2) {
+        for (var i = 2; i < k; i++) {
+            var sumAndCarry[2] = SplitFn(split[i][0] + split[i-1][1] + split[i-2][2] + carry[i-1], n, n);
+            out[i] <-- sumAndCarry[0];
+            carry[i] = sumAndCarry[1];
         }
-        out[i] <== adders[i - 2].sum;
+        out[k] <-- split[k-1][1] + split[k-2][2] + carry[k-1];
     }
-    if (k >= 3) {
-        out[k] <== splits[k - 2].big + splits[k - 1].medium + adders[k - 3].carry;
-    } else {
-        if (k >= 2) {
-            out[k] <== splits[k - 2].big + splits[k - 1].medium;
-        } else {
-            out[k] <== splits[k - 1].medium;
-        }
+
+    component outRangeChecks[k+1];
+    for (var i = 0; i < k+1; i++) {
+        outRangeChecks[i] = Num2Bits(n);
+        outRangeChecks[i].in <== out[i];
     }
+
+    signal runningCarry[k];
+    component runningCarryRangeChecks[k];
+    runningCarry[0] <-- (in[0] - out[0]) / (1 << n);
+    runningCarryRangeChecks[0] = Num2Bits(n + log_ceil(k));
+    runningCarryRangeChecks[0].in <== runningCarry[0];
+    runningCarry[0] * (1 << n) === in[0] - out[0];
+    for (var i = 1; i < k; i++) {
+        runningCarry[i] <-- (in[i] - out[i] + runningCarry[i-1]) / (1 << n);
+        runningCarryRangeChecks[i] = Num2Bits(n + log_ceil(k));
+        runningCarryRangeChecks[i].in <== runningCarry[i];
+        runningCarry[i] * (1 << n) === in[i] - out[i] + runningCarry[i-1];
+    }
+    runningCarry[k-1] === out[k];
 }
 
 template BigMult(n, k) {
