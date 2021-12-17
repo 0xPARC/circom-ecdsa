@@ -30,6 +30,7 @@ template Secp256k1AddUnequal(n, k) {
 
     var p[100] = get_secp256k1_prime(n, k);
 
+    // b[1] - a[1]
     component sub1 = BigSubModP(n, k);
     for (var i = 0; i < k; i++) {
         sub1.a[i] <== b[1][i];
@@ -37,6 +38,7 @@ template Secp256k1AddUnequal(n, k) {
         sub1.p[i] <== p[i];
     }
 
+    // b[0] - a[0]
     component sub0 = BigSubModP(n, k);
     for (var i = 0; i < k; i++) {
         sub0.a[i] <== b[0][i];
@@ -56,6 +58,12 @@ template Secp256k1AddUnequal(n, k) {
         range_checks[i] = Num2Bits(n);
         range_checks[i].in <== lambda[i];
     }
+    component lt = BigLessThan(n, k);
+    for (var i = 0; i < k; i++) {
+        lt.a[i] <== lambda[i];
+        lt.b[i] <== p[i];
+    }
+    lt.out === 1;
 
     component lambda_check = BigMultModP(n, k);
     for (var i = 0; i < k; i++) {
