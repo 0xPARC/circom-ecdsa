@@ -7,6 +7,7 @@
   "author": "0xPARC <hello@0xparc.org>",
   "license": "ISC",
   "dependencies": {
-    "circomlib": "^2.0.2"
+    "circomlib": "^2.0.2",
+    "snarkjs": "^0.4.10"
   }
 }

@@ -135,22 +135,20 @@ subprocess.run(['node',
                 'input.json',
                '{}/witness.wtns'.format(JS_DIR)])
 if args.zk_sys == 'plonk':
-    subprocess.run(['snarkjs', 'plonk', 'setup', '{}.r1cs'.format(TEST_STR), 'pot22_final.ptau', '{}.zkey'.format(TEST_STR)])
-    subprocess.run(['snarkjs', 'zkey', 'export', 'verificationkey', '{}.zkey'.format(TEST_STR), 'vkey.json'])
-    subprocess.run(['snarkjs', 'plonk', 'prove', '{}.zkey'.format(TEST_STR), '{}/witness.wtns'.format(JS_DIR), 'proof.json', 'public.json'])
-    subprocess.run(['snarkjs', 'plonk', 'verify', 'vkey.json', 'public.json', 'proof.json'])
+    subprocess.run(['npx', 'snarkjs', 'plonk', 'setup', '{}.r1cs'.format(TEST_STR), 'pot22_final.ptau', '{}.zkey'.format(TEST_STR)])
+    subprocess.run(['npx', 'snarkjs', 'zkey', 'export', 'verificationkey', '{}.zkey'.format(TEST_STR), 'vkey.json'])
+    subprocess.run(['npx', 'snarkjs', 'plonk', 'prove', '{}.zkey'.format(TEST_STR), '{}/witness.wtns'.format(JS_DIR), 'proof.json', 'public.json'])
+    subprocess.run(['npx', 'snarkjs', 'plonk', 'verify', 'vkey.json', 'public.json', 'proof.json'])
 elif args.zk_sys == 'groth16':
-    subprocess.run(['snarkjs', 'groth16', 'setup', '{}.r1cs'.format(TEST_STR), 'pot22_final.ptau', '{}.zkey'.format(TEST_STR)])
-    subprocess.run(['snarkjs', 'zkey', 'contribute', '{}.zkey'.format(TEST_STR), '{}1.zkey'.format(TEST_STR), '--name="asdfa"', '-v'])
-    subprocess.run(['snarkjs', 'zkey', 'contribute', '{}1.zkey'.format(TEST_STR), '{}2.zkey'.format(TEST_STR), '--name="asdfa2"', '-v'])
-    subprocess.run(['snarkjs', 'zkey', 'verify', '{}.r1cs'.format(TEST_STR), 'pot22_final.ptau', '{}2.zkey'.format(TEST_STR)])
-    subprocess.run(['snarkjs', 'zkey', 'beacon', '{}2.zkey'.format(TEST_STR), '{}_final.zkey'.format(TEST_STR),
+    subprocess.run(['npx', 'snarkjs', 'groth16', 'setup', '{}.r1cs'.format(TEST_STR), 'pot22_final.ptau', '{}.zkey'.format(TEST_STR)])
+    subprocess.run(['npx', 'snarkjs', 'zkey', 'verify', '{}.r1cs'.format(TEST_STR), 'pot22_final.ptau', '{}.zkey'.format(TEST_STR)])
+    subprocess.run(['npx', 'snarkjs', 'zkey', 'beacon', '{}2.zkey'.format(TEST_STR), '{}_final.zkey'.format(TEST_STR),
                     '0102030405060708090a0b0c0d0e0f101112231415161718221a1b1c1d1e1f', '10', '-n="Final Beacon phase2"'])
-    subprocess.run(['snarkjs', 'zkey', 'verify', '{}.r1cs'.format(TEST_STR), 'pot22_final.ptau', '{}_final.zkey'.format(TEST_STR)])
-    subprocess.run(['snarkjs', 'zkey', 'export', 'verificationkey', '{}_final.zkey'.format(TEST_STR), 'vkey.json'])
+    subprocess.run(['npx', 'snarkjs', 'zkey', 'verify', '{}.r1cs'.format(TEST_STR), 'pot22_final.ptau', '{}_final.zkey'.format(TEST_STR)])
+    subprocess.run(['npx', 'snarkjs', 'zkey', 'export', 'verificationkey', '{}_final.zkey'.format(TEST_STR), 'vkey.json'])
     
-    subprocess.run(['snarkjs', 'groth16', 'prove', '{}_final.zkey'.format(TEST_STR), '{}/witness.wtns'.format(JS_DIR), 'proof.json', 'public.json'])
-    subprocess.run(['snarkjs', 'groth16', 'verify', 'vkey.json', 'public.json', 'proof.json'])
+    subprocess.run(['npx', 'snarkjs', 'groth16', 'prove', '{}_final.zkey'.format(TEST_STR), '{}/witness.wtns'.format(JS_DIR), 'proof.json', 'public.json'])
+    subprocess.run(['npx', 'snarkjs', 'groth16', 'verify', 'vkey.json', 'public.json', 'proof.json'])
     
                 
 with open('public.json', 'r') as f:
