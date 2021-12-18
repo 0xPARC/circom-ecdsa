@@ -3,7 +3,12 @@ import json
 import os
 import subprocess
 
-from compute_secp256k1_math import get_g_pows, get_g_pow_val, get_long
+P = 2**256 - 2**32 - 977
+N = 115792089237316195423570985008687907852837564279074904382605163141518161494337
+A = 0
+B = 7
+Gx = 55066263022277343669578718895168534326250603453777594175500187360389116729240
+Gy = 32670510020758816978083085130507043184471273380659243275938904335757337482424
 
 def egcd(a, b):
     if a == 0:
@@ -18,6 +23,54 @@ def modinv(a, m):
         raise Exception('modular inverse does not exist')
     else:
         return x % m
+
+def get_long(n, k, x):
+    ret = []
+    for idx in range(k):
+        ret.append(x % (2 ** n))
+        x = x // (2 ** n)
+    return ret
+
+def add(x1, y1, x2, y2):
+    lamb = ((y2 - y1) * modinv(P + x2 - x1, P)) % P
+    retx = (P + lamb ** 2 - x1 - x2) % P
+    rety = (P + lamb * (x1 - retx) - y1) % P
+    return retx, rety
+
+def double(x, y):
+    lamb = (3 * (x ** 2) * modinv(2 * y, P)) % P
+    retx = (lamb ** 2 - 2 * x) % P
+    rety = (lamb * (x - retx) - y) % P
+    return retx, rety
+
+def get_g_pows(exp):
+    g_pows = []
+    curr_x, curr_y = Gx, Gy
+    for idx in range(exp):
+        g_pows.append((curr_x, curr_y))
+        curr_x, curr_y = double(curr_x, curr_y)
+    return g_pows
+
+def get_binary(x):
+    ret = []
+    while x > 0:
+        ret.append(x % 2)
+        x = x // 2
+    return ret
+
+def get_g_pow_val(g_pows, exp, n, k):
+    binary = get_binary(exp)
+    is_nonzero = False
+    curr_sum = None
+    for idx, val in enumerate(binary):
+        if val != 0:
+            if not is_nonzero:
+                is_nonzero = True 
+                curr_sum = g_pows[idx]
+            else:
+                curr_sum = add(curr_sum[0], curr_sum[1], g_pows[idx][0], g_pows[idx][1])
+    return curr_sum            
+
 
 class bcolors:
     HEADER = '\033[95m'

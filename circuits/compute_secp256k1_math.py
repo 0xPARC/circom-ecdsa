@@ -86,7 +86,7 @@ function get_g_pow_stride{}_table(n, k, exp) '''.format(stride)
     assert(n == 86 && k == 3);
     assert(exp >= 1 && exp <= 264);
     var powers[{}][{}][2][3];
-'''.format(258, 256);
+'''.format(258, 1024);
     EXP = 258
     g_pows = get_g_pows(EXP)
 
@@ -138,6 +138,6 @@ def get_ecdsa_func_str(n, k, stride_list):
         ret_str = ret_str + cache_str
     return ret_str
 
-stride_list = [2, 8]
+stride_list = [2, 8, 10]
 ecdsa_func_str = get_ecdsa_func_str(86, 3, stride_list)
-#print(ecdsa_func_str)
+print(ecdsa_func_str)
