@@ -13,7 +13,7 @@ Implementation of ECC operations in circom.
 
 Right now we have some python scripts to test circuit compilation and proofs. This will be ported to JS shortly. You can run tests by running:
 ```
-python test_ecdsa.py --stride 8 --zk_sys groth16
+python test_ecdsa.py --stride [2 or 8 or 10] --zk_sys [groth16 or plonk]
 ```
 
 Note that the script takes a VERY long time to run.
