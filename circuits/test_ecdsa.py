@@ -106,7 +106,7 @@ CPP_DIR = '{}_cpp'.format(TEST_STR)
 parser = argparse.ArgumentParser()
 parser.add_argument('--n', type=int, default=86)
 parser.add_argument('--k', type=int, default=3)
-parser.add_argument('--stride', type=int, default=8)
+parser.add_argument('--stride', type=int, default=10)
 parser.add_argument('--privkey', type=int, default=7)
 parser.add_argument('--zk_sys', type=str, default='plonk')
 args = parser.parse_args()
@@ -142,7 +142,7 @@ if args.zk_sys == 'plonk':
 elif args.zk_sys == 'groth16':
     subprocess.run(['npx', 'snarkjs', 'groth16', 'setup', '{}.r1cs'.format(TEST_STR), 'pot22_final.ptau', '{}.zkey'.format(TEST_STR)])
     subprocess.run(['npx', 'snarkjs', 'zkey', 'verify', '{}.r1cs'.format(TEST_STR), 'pot22_final.ptau', '{}.zkey'.format(TEST_STR)])
-    subprocess.run(['npx', 'snarkjs', 'zkey', 'beacon', '{}2.zkey'.format(TEST_STR), '{}_final.zkey'.format(TEST_STR),
+    subprocess.run(['npx', 'snarkjs', 'zkey', 'beacon', '{}.zkey'.format(TEST_STR), '{}_final.zkey'.format(TEST_STR),
                     '0102030405060708090a0b0c0d0e0f101112231415161718221a1b1c1d1e1f', '10', '-n="Final Beacon phase2"'])
     subprocess.run(['npx', 'snarkjs', 'zkey', 'verify', '{}.r1cs'.format(TEST_STR), 'pot22_final.ptau', '{}_final.zkey'.format(TEST_STR)])
     subprocess.run(['npx', 'snarkjs', 'zkey', 'export', 'verificationkey', '{}_final.zkey'.format(TEST_STR), 'vkey.json'])
