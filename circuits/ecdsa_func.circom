@@ -1,4 +1,4 @@
-pragma circom 2.0.1;
+pragma circom 2.0.2;
 
 // powers[i] contains the (x, y) coordinates of (i + 1) * G
 function get_g_pow_stride1_table(n, k, exp) {

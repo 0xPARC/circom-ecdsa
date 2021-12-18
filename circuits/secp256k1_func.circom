@@ -1,4 +1,4 @@
-pragma circom 2.0.1;
+pragma circom 2.0.2;
 
 // from https://github.com/ethereum/py_ecc/blob/master/py_ecc/secp256k1/secp256k1.py
 function get_gx(n, k) {

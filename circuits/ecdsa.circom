@@ -1,11 +1,10 @@
-pragma circom 2.0.1;
+pragma circom 2.0.2;
 
 include "../node_modules/circomlib/circuits/comparators.circom";
 include "../node_modules/circomlib/circuits/multiplexer.circom";
 
 include "bigint.circom";
 include "secp256k1.circom";
-include "secp256k1_func.circom";
 include "ecdsa_func.circom";
 include "ecdsa_stride_func.circom";
 
@@ -99,10 +98,15 @@ template ECDSAPrivToPubStride(n, k, stride) {
     }
     // power[i][j] contains: [j * (1 << stride * i) * G] for 1 <= j < (1 << stride)
     var powers[258][256][2][3];
-    powers = get_g_pow_stride_table(86, 3, 258, stride);
+    if (stride == 2) {
+        powers = get_g_pow_stride2_table(86, 3, 258);
+    }
+    if (stride == 8) {
+        powers = get_g_pow_stride8_table(86, 3, 258);
+    }    
 
     // contains a dummy point to stand in when we are adding 0
-    var dummy[2][100];
+    var dummy[2][3];
     // dummy = (2 ** 258) * G
     dummy[0][0] = 35872591715049374896265832;
     dummy[0][1] = 6356226619579407084632810;
