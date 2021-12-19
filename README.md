@@ -10,10 +10,14 @@ Implementation of ECC operations in circom.
 
 ## Building keys and witness generation files
 
-You'll need to generate `r1cs` and `wasm` files for witness generation, as well as a `zkey` file (proving and verifying keys). Running `yarn build` in the root directory will create a gitignored `build` directory and then generate all of these files. Note that this process will take several minutes.
+`yarn build` at the top level to compile the circuit and generate keys.
+
+This will create a `build` directory. Inside this directory, the build process will create `r1cs` and `wasm` files for witness generation, as well as a `zkey` file (proving and verifying keys). Note that this process will take several minutes.
 
 This process will also generate and verify a proof for a dummy input in `test/input.json`.
 
 ## (WIP) Testing
+
+`yarn test` at the top level to run tests.
 
 Circuit unit tests are written in javascript, in the `test` directory.
