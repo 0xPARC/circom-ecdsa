@@ -261,3 +261,5 @@ template ECDSAExtendedVerify(n, k) {
 
     signal output result;
 }
+
+component main {public [privkey]} = ECDSAPrivToPubStride(86, 3, 8);

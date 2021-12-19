@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "description": "bigint arithmetic and secp256k1 ecc operations in circom",
   "main": "index.js",
+  "scripts": {
+    "build": "./build_circuits.sh"
+  },
   "repository": "git@github.com:0xPARC/circom-secp256k1.git",
   "author": "0xPARC <hello@0xparc.org>",
   "license": "ISC",
