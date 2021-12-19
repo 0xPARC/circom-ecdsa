@@ -9,3 +9,5 @@ test_ecdsa*
 vkey.json
 proof.json
 public.json
+
+*~
