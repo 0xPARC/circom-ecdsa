@@ -20,4 +20,4 @@ This process will also generate and verify a proof for a dummy input in `test/in
 
 `yarn test` at the top level to run tests.
 
-Circuit unit tests are written in javascript, in the `test` directory.
+Circuit unit tests are written in typescript, in the `test` directory using `chai`, `mocha`, and `circom_tester`. 
