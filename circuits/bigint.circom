@@ -38,7 +38,7 @@ template ModSubThree(n) {
     assert(n + 2 <= 253);
     signal input a;
     signal input b;
-    signal input c; 
+    signal input c;
     signal output out;
     signal output borrow;
     signal tmp;
@@ -54,7 +54,7 @@ template ModSumThree(n) {
     assert(n + 2 <= 253);
     signal input a;
     signal input b;
-    signal input c; 
+    signal input c;
     signal output sum;
     signal output carry;
 
@@ -69,7 +69,7 @@ template ModSumFour(n) {
     signal input a;
     signal input b;
     signal input c;
-    signal input d;         
+    signal input d;
     signal output sum;
     signal output carry;
 
@@ -106,7 +106,7 @@ template Split(n, m) {
     assert(n <= 126);
     signal input in;
     signal output small;
-    signal output big;    
+    signal output big;
 
     small <-- in % (1 << n);
     big <-- in \ (1 << n);
@@ -125,7 +125,7 @@ template SplitThree(n, m, k) {
     signal input in;
     signal output small;
     signal output medium;
-    signal output big;      
+    signal output big;
 
     small <-- in % (1 << n);
     medium <-- (in \ (1 << n)) % (1 << m);
@@ -198,7 +198,7 @@ template BigMultShortLong(n, k) {
    for (var i = 0; i < 2 * k - 1; i++) {
        out_poly[i] = 0;
        a_poly[i] = 0;
-       b_poly[i] = 0;    
+       b_poly[i] = 0;
        for (var j = 0; j < 2 * k - 1; j++) {
            out_poly[i] = out_poly[i] + out[j] * (i ** j);
        }
@@ -305,11 +305,11 @@ template BigLessThan(n, k){
     // eq_ands[i] holds (eq[k - 1] && .. && eq[i])
     component ors[k - 1];
     component ands[k - 1];
-    component eq_ands[k - 1];          
+    component eq_ands[k - 1];
     for (var i = k - 2; i >= 0; i--) {
         ands[i] = AND();
         eq_ands[i] = AND();
-        ors[i] = OR();           
+        ors[i] = OR();
 
         if (i == k - 2) {
            ands[i].a <== eq[k - 1].out;
@@ -380,7 +380,7 @@ template BigMod(n, k) {
         }
     }
     add.a[2 * k] <== mul.out[2 * k];
-    add.a[2 * k + 1] <== mul.out[2 * k + 1];        
+    add.a[2 * k + 1] <== mul.out[2 * k + 1];
     add.b[2 * k] <== 0;
     add.b[2 * k + 1] <== 0;
 
@@ -392,7 +392,7 @@ template BigMod(n, k) {
         add.out[i] === a[i];
     }
     add.out[2 * k] === 0;
-    add.out[2 * k + 1] === 0;   
+    add.out[2 * k + 1] === 0;
 
     component lt = BigLessThan(n, k);
     for (var i = 0; i < k; i++) {
@@ -433,7 +433,7 @@ template BigSub(n, k) {
 }
 
 template BigSubModP(n, k){
-    assert (n<= 252);
+    assert(n <= 252);
     signal input a[k];
     signal input b[k];
     signal input p[k];
@@ -469,7 +469,7 @@ template BigMultModP(n, k) {
         big_mult.a[i] <== a[i];
         big_mult.b[i] <== b[i];
     }
-    component big_mod = BigMod(n, k);   
+    component big_mod = BigMod(n, k);
     for (var i = 0; i < 2 * k; i++) {
         big_mod.a[i] <== big_mult.out[i];
     }
@@ -478,7 +478,7 @@ template BigMultModP(n, k) {
     }
     for (var i = 0; i < k; i++) {
         out[i] <== big_mod.mod[i];
-    }    
+    }
 }
 
 template BigModInv(n, k) {

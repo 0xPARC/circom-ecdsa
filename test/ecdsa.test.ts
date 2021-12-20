@@ -18,9 +18,9 @@ function bigint_to_tuple(x: bigint) {
     var x_temp: bigint = x;
     for (var idx = 0; idx < 3; idx++) {
         ret[idx] = x_temp % mod;
-	x_temp = x_temp / mod;
+        x_temp = x_temp / mod;
     }
-    return ret;    
+    return ret;
 }
 
 describe("ECDSAPrivToPubStride", function () {
@@ -34,40 +34,40 @@ describe("ECDSAPrivToPubStride", function () {
 
     // each incremental witness computation does not require compilation
     it("Default sample", async() => {
-	let witness = await circuit.calculateWitness({"privkey": ["7", "0", "0"]});
-	expect(Fr.e(Scalar.fromString(witness[1]))).to.equal(Fr.e(Scalar.fromString("59103311026955956754119100")));
-	expect(Fr.e(Scalar.fromString(witness[2]))).to.equal(Fr.e(Scalar.fromString("16432869926048670770133004")));
-	expect(Fr.e(Scalar.fromString(witness[3]))).to.equal(Fr.e(Scalar.fromString("7007383570325663759612303")));
-	expect(Fr.e(Scalar.fromString(witness[4]))).to.equal(Fr.e(Scalar.fromString("74838692406509378584339674")));
-	expect(Fr.e(Scalar.fromString(witness[5]))).to.equal(Fr.e(Scalar.fromString("64932989450846822570582095")));
-	expect(Fr.e(Scalar.fromString(witness[6]))).to.equal(Fr.e(Scalar.fromString("8078726494313086148292984")));
+        let witness = await circuit.calculateWitness({"privkey": ["7", "0", "0"]});
+        expect(Fr.e(Scalar.fromString(witness[1]))).to.equal(Fr.e(Scalar.fromString("59103311026955956754119100")));
+        expect(Fr.e(Scalar.fromString(witness[2]))).to.equal(Fr.e(Scalar.fromString("16432869926048670770133004")));
+        expect(Fr.e(Scalar.fromString(witness[3]))).to.equal(Fr.e(Scalar.fromString("7007383570325663759612303")));
+        expect(Fr.e(Scalar.fromString(witness[4]))).to.equal(Fr.e(Scalar.fromString("74838692406509378584339674")));
+        expect(Fr.e(Scalar.fromString(witness[5]))).to.equal(Fr.e(Scalar.fromString("64932989450846822570582095")));
+        expect(Fr.e(Scalar.fromString(witness[6]))).to.equal(Fr.e(Scalar.fromString("8078726494313086148292984")));
     });
 
     // privkey, pub0, pub1
     var test_cases: Array<[bigint, bigint, bigint]> = [];
     for (var privkey = 1n; privkey <= 5n; privkey++) {
-	var pubkey: Point = Point.fromPrivateKey(privkey);
+        var pubkey: Point = Point.fromPrivateKey(privkey);
         test_cases.push([privkey, pubkey.x, pubkey.y]);
     }
 
     var test_ecdsa_instance = function (keys: [bigint, bigint, bigint]) {
         let privkey = keys[0];
-	let pub0 = keys[1];
-	let pub1 = keys[2];
+        let pub0 = keys[1];
+        let pub1 = keys[2];
 
         var priv_tuple: [bigint, bigint, bigint] = bigint_to_tuple(privkey);
-	var pub0_tuple: [bigint, bigint, bigint] = bigint_to_tuple(pub0);
+        var pub0_tuple: [bigint, bigint, bigint] = bigint_to_tuple(pub0);
         var pub1_tuple: [bigint, bigint, bigint] = bigint_to_tuple(pub1);
 
-    	it('Testing privkey: ' + privkey + ' pubkey.x: ' + pub0 + ' pubkey.y: ' + pub1, async function() {
-	    let witness = await circuit.calculateWitness({"privkey": priv_tuple});
-	    expect(witness[1]).to.equal(pub0_tuple[0]);
-	    expect(witness[2]).to.equal(pub0_tuple[1]);
-	    expect(witness[3]).to.equal(pub0_tuple[2]);
-	    expect(witness[4]).to.equal(pub1_tuple[0]);
-	    expect(witness[5]).to.equal(pub1_tuple[1]);
-	    expect(witness[6]).to.equal(pub1_tuple[2]);
-	});
+        it('Testing privkey: ' + privkey + ' pubkey.x: ' + pub0 + ' pubkey.y: ' + pub1, async function() {
+            let witness = await circuit.calculateWitness({"privkey": priv_tuple});
+            expect(witness[1]).to.equal(pub0_tuple[0]);
+            expect(witness[2]).to.equal(pub0_tuple[1]);
+            expect(witness[3]).to.equal(pub0_tuple[2]);
+            expect(witness[4]).to.equal(pub1_tuple[0]);
+            expect(witness[5]).to.equal(pub1_tuple[1]);
+            expect(witness[6]).to.equal(pub1_tuple[2]);
+        });
     }
 
     test_cases.forEach(test_ecdsa_instance);

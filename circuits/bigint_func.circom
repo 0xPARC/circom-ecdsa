@@ -150,7 +150,7 @@ function long_div(n, k, a, b) {
 // b has k registers
 // assumes leading digit of b is at least 2 ** (n - 1)
 // 0 <= a < (2**n) * b
-function short_div_norm(n, k, a, b) {   
+function short_div_norm(n, k, a, b) {
    var qhat = (a[k] * (1 << n) + a[k - 1]) \ b[k - 1];
    if (qhat > (1 << n) - 1) {
       qhat = (1 << n) - 1;
@@ -286,7 +286,7 @@ function mod_exp(n, k, a, p, e) {
             temp2 = long_div(n, k, temp, p);
             out = temp2[1];
         }
-        
+
     }
     return out;
 }

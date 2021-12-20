@@ -14,14 +14,14 @@ function bigint_to_array(n: number, k: number, x: bigint) {
     for (var idx = 0; idx < n; idx++) {
         mod = mod * 2n;
     }
-    
+
     let ret: bigint[] = [];
     var x_temp: bigint = x;
     for (var idx = 0; idx < k; idx++) {
         ret.push(x_temp % mod);
-	x_temp = x_temp / mod;
+        x_temp = x_temp / mod;
     }
-    return ret;    
+    return ret;
 }
 
 describe("BigMod n = 2, k = 2 exhaustive", function() {
@@ -36,28 +36,28 @@ describe("BigMod n = 2, k = 2 exhaustive", function() {
     var test_cases: Array<[bigint, bigint, bigint, bigint]> = [];
     for (var a = 0n; a < 4 * 4 * 4 * 4; a++) {
         for (var b = 4n; b < 4 * 4; b++) {
-	    var div = a / b;
-	    var mod = a % b;
-	    test_cases.push([a, b, div, mod]);
-	}
+            var div = a / b;
+            var mod = a % b;
+            test_cases.push([a, b, div, mod]);
+        }
     }
 
     var test_bigmod_22 = function (x: [bigint, bigint, bigint, bigint]) {
         const [a, b, div, mod] = x;
 
         var a_array: bigint[] = bigint_to_array(2, 4, a);
-	var b_array: bigint[] = bigint_to_array(2, 2, b);
+        var b_array: bigint[] = bigint_to_array(2, 2, b);
         var div_array: bigint[] = bigint_to_array(2, 3, div);
-        var mod_array: bigint[] = bigint_to_array(2, 2, mod);	
+        var mod_array: bigint[] = bigint_to_array(2, 2, mod);
 
-    	it('Testing a: ' + a + ' b: ' + b, async function() {
-	    let witness = await circuit.calculateWitness({"a": a_array, "b": b_array});
-	    expect(witness[1]).to.equal(div_array[0]);
-	    expect(witness[2]).to.equal(div_array[1]);
-   	    expect(witness[3]).to.equal(div_array[2]);
-	    expect(witness[4]).to.equal(mod_array[0]);
-	    expect(witness[5]).to.equal(mod_array[1]);
-	});
+        it('Testing a: ' + a + ' b: ' + b, async function() {
+            let witness = await circuit.calculateWitness({"a": a_array, "b": b_array});
+            expect(witness[1]).to.equal(div_array[0]);
+            expect(witness[2]).to.equal(div_array[1]);
+            expect(witness[3]).to.equal(div_array[2]);
+            expect(witness[4]).to.equal(mod_array[0]);
+            expect(witness[5]).to.equal(mod_array[1]);
+        });
     }
 
     test_cases.forEach(test_bigmod_22);
