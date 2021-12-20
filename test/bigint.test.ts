@@ -26,6 +26,7 @@ function bigint_to_array(n: number, k: number, x: bigint) {
 
 describe("BigMod n = 2, k = 2 exhaustive", function() {
     this.timeout(1000 * 1000);
+
     // runs circom compilation
     let circuit: any;
     before(async function () {
@@ -61,4 +62,47 @@ describe("BigMod n = 2, k = 2 exhaustive", function() {
     }
 
     test_cases.forEach(test_bigmod_22);
+});
+
+describe("BigSubModP n = 3, k = 2, p in {7, 37} exhaustive", function() {
+    this.timeout(1000 * 1000);
+
+    // runs circom compilation
+    let circuit: any;
+    before(async function () {
+        circuit = await wasm_tester(path.join(__dirname, "circuits", "test_bigsubmodp_32.circom"));
+    });
+
+    // a, b, p
+    let test_cases: Array<[bigint, bigint, bigint, bigint]> = [];
+    for (let a = 0n; a < 8 * 8; a++) {
+        for (let b = 0n; b < 8 * 8; b++) {
+            test_cases.push([a, b, 7n, (a - b + 7n) % 7n]);
+            // test_cases.push([a, b, 37n, (a - b + 37n) % 37n]);
+        }
+    }
+
+    // TODO(tony): debug
+    /*
+    let test_bigsubmodp_3_2_7 = function (x: [bigint, bigint, bigint, bigint]) {
+        const [a, b, p, sub] = x;
+
+        let a_array: bigint[] = bigint_to_array(3, 2, a);
+        let b_array: bigint[] = bigint_to_array(3, 2, b);
+        let p_array: bigint[] = bigint_to_array(3, 2, p);
+        let sub_array: bigint[] = bigint_to_array(3, 2, sub);
+
+        it.only('Testing a: ' + a + ' b: ' + b + ' p: ' + p, async function() {
+            let witness = await circuit.calculateWitness({
+                "a": a_array,
+                "b": b_array,
+                "p": p_array
+            });
+            expect(witness[1]).to.equal(sub_array[0]);
+            expect(witness[2]).to.equal(sub_array[1]);
+        });
+    }
+
+    test_cases.forEach(test_bigsubmodp_3_2_7);
+    */
 });
