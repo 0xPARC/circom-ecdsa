@@ -233,9 +233,9 @@ template ECDSASign(n, k) {
     assert(n * k >= 256);
     // TODO(tony): rewrite in a way that works...
     signal nVal[k];
-    nConst = 115792089237316195423570985008687907852837564279074904382605163141518161494337;
+    var nConst = 115792089237316195423570985008687907852837564279074904382605163141518161494337;
     for (var i = 0; i < k; i++) {
-        var chunk = (Ncost >> i) & ((1 << k) - 1);
+        var chunk = (nConst >> i) & ((1 << k) - 1);
         nVal[i] <== chunk;
     }
     component rMod = BigMod(n, k);
@@ -281,7 +281,7 @@ template ECDSASign(n, k) {
     component nInv = BigModInv(n, k);
     for (var i = 0; i < k; i++) {
         nInv.a[i] <== nonce[i];
-        nInv.b[i] <== p[i];
+        nInv.b[i] <== nVal[i];
     }
     signal nonceInv[k];
     for (var i = 0; i < k; i++) {
