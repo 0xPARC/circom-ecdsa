@@ -146,7 +146,6 @@ describe("BigMult n = 2, k = 3 exhaustive", function() {
     test_cases.forEach(test_bigmult_23);
 });
 
-
 describe("BigAdd n = 2, k = 3 exhaustive", function() {
     this.timeout(1000 * 1000);
 
@@ -221,6 +220,78 @@ describe("BigAdd n = 1, k = 5 exhaustive", function() {
     test_cases.forEach(test_bigadd_15);
 });
 
+describe("BigSub n = 2, k = 3 exhaustive", function() {
+    this.timeout(1000 * 1000);
+
+    // runs circom compilation
+    let circuit: any;
+    before(async function () {
+        circuit = await wasm_tester(path.join(__dirname, "circuits", "test_bigsub_23.circom"));
+    });
+
+    // a, b, diff
+    var test_cases: Array<[bigint, bigint, bigint]> = [];
+    for (var a = 0n; a < 4 * 4 * 4; a++) {
+        for (var b = 0n; b <= a; b++) {
+            var diff = a - b;
+            test_cases.push([a, b, diff]);
+        }
+    }
+
+    var test_bigsub_23 = function (x: [bigint, bigint, bigint]) {
+        const [a, b, diff] = x;
+
+        var a_array: bigint[] = bigint_to_array(2, 3, a);
+        var b_array: bigint[] = bigint_to_array(2, 3, b);
+        var diff_array: bigint[] = bigint_to_array(2, 3, diff);
+
+        it('Testing a: ' + a + ' b: ' + b, async function() {
+            let witness = await circuit.calculateWitness({"a": a_array, "b": b_array});
+            expect(witness[1]).to.equal(diff_array[0]);
+            expect(witness[2]).to.equal(diff_array[1]);
+            expect(witness[3]).to.equal(diff_array[2]);
+        });
+    }
+
+    test_cases.forEach(test_bigsub_23);
+});
+
+describe("BigSub n = 1, k = 5 exhaustive", function() {
+    this.timeout(1000 * 1000);
+
+    // runs circom compilation
+    let circuit: any;
+    before(async function () {
+        circuit = await wasm_tester(path.join(__dirname, "circuits", "test_bigsub_15.circom"));
+    });
+
+    // a, b, diff
+    var test_cases: Array<[bigint, bigint, bigint]> = [];
+    for (var a = 0n; a < 2 * 2 * 2 * 2 * 2; a++) {
+        for (var b = 0n; b <= a; b++) {
+            var diff = a - b;
+            test_cases.push([a, b, diff]);
+        }
+    }
+
+    var test_bigsub_15 = function (x: [bigint, bigint, bigint]) {
+        const [a, b, diff] = x;
+
+        var a_array: bigint[] = bigint_to_array(1, 5, a);
+        var b_array: bigint[] = bigint_to_array(1, 5, b);
+        var diff_array: bigint[] = bigint_to_array(1, 5, diff);
+
+        it('Testing a: ' + a + ' b: ' + b, async function() {
+            let witness = await circuit.calculateWitness({"a": a_array, "b": b_array});
+            expect(witness[1]).to.equal(diff_array[0]);
+            expect(witness[2]).to.equal(diff_array[1]);
+            expect(witness[3]).to.equal(diff_array[2]);
+        });
+    }
+
+    test_cases.forEach(test_bigsub_15);
+});
+
 describe("BigLessThan n = 2, k = 3 exhaustive", function() {
     this.timeout(1000 * 1000);
 
@@ -253,3 +324,4 @@ describe("BigLessThan n = 2, k = 3 exhaustive", function() {
 
     test_cases.forEach(test_biglessthan_23);
 });
+
