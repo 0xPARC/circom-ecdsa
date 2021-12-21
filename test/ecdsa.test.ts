@@ -52,8 +52,8 @@ describe("ECDSAPrivToPubStride", function () {
 				   90388020393783788847120091912026443124559466591761394939671630294477859800601n,
 				   110977009687373213104962226057480551605828725303063265716157300460694423838923n];
     for (var idx = 0; idx < 4; idx++) {
-        var pubkey: Point = Point.fromPrivateKey(privkey);
-        test_cases.push([privkey, pubkey.x, pubkey.y]);
+        var pubkey: Point = Point.fromPrivateKey(privkeys[idx]);
+        test_cases.push([privkeys[idx], pubkey.x, pubkey.y]);
     }
 
     for (var privkey = 1n; privkey <= 5n; privkey++) {
