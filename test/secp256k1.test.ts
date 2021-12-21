@@ -40,8 +40,8 @@ describe("Secp256k1AddUnequal", function () {
     // 4 randomly chosen private keys
     var privkeys: Array<bigint> = [88549154299169935420064281163296845505587953610183896504176354567359434168161n,
                                    37706893564732085918706190942542566344879680306879183356840008504374628845468n,
-				   90388020393783788847120091912026443124559466591761394939671630294477859800601n,
-				   110977009687373213104962226057480551605828725303063265716157300460694423838923n];
+                                   90388020393783788847120091912026443124559466591761394939671630294477859800601n,
+                                   110977009687373213104962226057480551605828725303063265716157300460694423838923n];
     var pubkeys: Array<Point> = [];
     for (var idx = 0; idx < 4; idx++) {
         var pubkey: Point = Point.fromPrivateKey(privkeys[idx]);
@@ -50,20 +50,20 @@ describe("Secp256k1AddUnequal", function () {
 
     for (var idx = 0; idx < 4; idx++) {
         for (var idx2 = idx + 1; idx2 < 4; idx2++) {
-	    var sum: Point = pubkeys[idx].add(pubkeys[idx2]);
-	    test_cases.push([pubkeys[idx].x, pubkeys[idx].y,
-	                     pubkeys[idx2].x, pubkeys[idx2].y,
-			     sum.x, sum.y]);
-	}
+            var sum: Point = pubkeys[idx].add(pubkeys[idx2]);
+            test_cases.push([pubkeys[idx].x, pubkeys[idx].y,
+                             pubkeys[idx2].x, pubkeys[idx2].y,
+                             sum.x, sum.y]);
+        }
     }
 
     var test_secp256k1_add_instance = function (test_case: [bigint, bigint, bigint, bigint, bigint, bigint]) {
         let pub0x = test_case[0];
-        let pub0y = test_case[1];	
+        let pub0y = test_case[1];
         let pub1x = test_case[2];
-        let pub1y = test_case[3];	
+        let pub1y = test_case[3];
         let sumx = test_case[4];
-        let sumy = test_case[5];	
+        let sumy = test_case[5];
 
         var pub0x_array: bigint[] = bigint_to_array(86, 3, pub0x);
         var pub0y_array: bigint[] = bigint_to_array(86, 3, pub0y);
@@ -74,7 +74,7 @@ describe("Secp256k1AddUnequal", function () {
 
         it('Testing pub0x: ' + pub0x + ' pub0y: ' + pub0y + ' pub1x: ' + pub1x + ' pub1y: ' + pub1y + ' sumx: ' + sumx + ' sumy: ' + sumy, async function() {
             let witness = await circuit.calculateWitness({"a": [pub0x_array, pub0y_array],
-	                                                  "b": [pub1x_array, pub1y_array]});
+                                                          "b": [pub1x_array, pub1y_array]});
             expect(witness[1]).to.equal(sumx_array[0]);
             expect(witness[2]).to.equal(sumx_array[1]);
             expect(witness[3]).to.equal(sumx_array[2]);

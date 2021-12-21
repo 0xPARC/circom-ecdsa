@@ -9,7 +9,7 @@ function get_gx(n, k) {
         ret[1] = 12501176021340589225372855;
         ret[2] = 9198697782662356105779718;
     }
-    return ret;    
+    return ret;
 }
 
 function get_gy(n, k) {
@@ -20,7 +20,7 @@ function get_gy(n, k) {
         ret[1] = 57953919405111227542741658;
         ret[2] = 5457536640262350763842127;
     }
-    return ret;    
+    return ret;
 }
 
 function get_secp256k1_prime(n, k) {
