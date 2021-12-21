@@ -34,3 +34,13 @@ function get_secp256k1_prime(n, k) {
      return ret;
 }
 
+function get_secp256k1_order(n, k) {
+    assert(n == 86 && k == 3);
+    var ret[100];
+    if (n == 86 && k == 3) {
+        ret[0] = 10428087374290690730508609;
+        ret[1] = 77371252455330678278691517;
+        ret[2] = 19342813113834066795298815;
+    }
+    return ret;
+}
