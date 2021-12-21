@@ -145,3 +145,36 @@ describe("BigMult n = 2, k = 3 exhaustive", function() {
 
     test_cases.forEach(test_bigmult_23);
 });
+
+describe("BigLessThan n = 2, k = 3 exhaustive", function() {
+    this.timeout(1000 * 1000);
+
+    // runs circom compilation
+    let circuit: any;
+    before(async function () {
+        circuit = await wasm_tester(path.join(__dirname, "circuits", "test_biglessthan_23.circom"));
+    });
+
+    // a, b, div, mod
+    var test_cases: Array<[bigint, bigint, bigint]> = [];
+    for (var a = 0n; a < 4 * 4 * 4; a++) {
+        for (var b = 0n; b < 4 * 4 * 4; b++) {
+            var islessthan = a < b? 1n: 0n;
+            test_cases.push([a, b, islessthan]);
+        }
+    }
+
+    var test_biglessthan_23 = function (x: [bigint, bigint, bigint]) {
+        const [a, b, islessthan] = x;
+
+        var a_array: bigint[] = bigint_to_array(2, 3, a);
+        var b_array: bigint[] = bigint_to_array(2, 3, b);
+
+        it('Testing a: ' + a + ' b: ' + b, async function() {
+            let witness = await circuit.calculateWitness({"a": a_array, "b": b_array});
+            expect(witness[1]).to.equal(islessthan);
+        });
+    }
+
+    test_cases.forEach(test_biglessthan_23);
+});
