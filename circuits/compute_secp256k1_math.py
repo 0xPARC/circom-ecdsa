@@ -87,12 +87,12 @@ function get_g_pow_stride{}_table(n, k, exp) '''.format(stride)
     assert(exp >= 1 && exp <= 264);
     var powers[{}][{}][2][3];
 '''.format(258, 1024);
-    EXP = 258
+    EXP = 264
     g_pows = get_g_pows(EXP)
 
     for stride_idx in range(num_strides):
         for idx in range(2 ** stride):
-            exp = idx * (2 ** stride_idx)
+            exp = idx * (2 ** (stride_idx * stride))
             if exp > 0:
                 g_pow = get_g_pow_val(g_pows, exp, n, k)
                 long_g_pow = get_long(n, k, g_pow[0]), get_long(n, k, g_pow[1])

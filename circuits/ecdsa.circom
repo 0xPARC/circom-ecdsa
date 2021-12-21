@@ -133,15 +133,10 @@ template ECDSAPrivToPubStride(n, k, stride) {
         }
     }
 
-    signal partial[num_strides][2][k];
-    signal partial_intermed1[num_strides][2][k];
-    signal partial_intermed2[num_strides][2][k];
-
+    // multiplexers[i][l].out will be the coordinates of:
+    // selectors[i].out * (2 ** (i * stride)) * G    if selectors[i].out is non-zero
+    // (2 ** 258) * G                                if selectors[i].out is zero
     component multiplexers[num_strides][2];
-    component adders[num_strides - 1];
-    component ors[num_strides];
-    component iszeros[num_strides];     
-
     // select from k-register outputs using a 2 ** stride bit selector
     for (var i = 0; i < num_strides; i++) {
         for (var l = 0; l < 2; l++) {
@@ -155,60 +150,59 @@ template ECDSAPrivToPubStride(n, k, stride) {
             }
         }
     }
-    
+
+    component iszero[num_strides];         
+    for (var i = 0; i < num_strides; i++) {
+        iszero[i] = IsZero();
+        iszero[i].in <== selectors[i].out;
+    }
+
+    // has_prev_nonzero[i] = 1 if at least one of the selections in privkey up to stride i is non-zero
+    component has_prev_nonzero[num_strides];
+    has_prev_nonzero[0] = OR();
+    has_prev_nonzero[0].a <== 0;
+    has_prev_nonzero[0].b <== 1 - iszero[0].out;
+    for (var i = 1; i < num_strides; i++) {
+        has_prev_nonzero[i] = OR();
+        has_prev_nonzero[i].a <== has_prev_nonzero[i - 1].out;
+        has_prev_nonzero[i].b <== 1 - iszero[i].out;
+    }
+
+    signal partial[num_strides][2][k];
     for (var idx = 0; idx < k; idx++) {
         for (var l = 0; l < 2; l++) {
             partial[0][l][idx] <== multiplexers[0][l].out[idx];
-            partial_intermed1[0][l][idx] <== 0;
-            partial_intermed2[0][l][idx] <== 0;
+        }
+    }
+
+    component adders[num_strides - 1];
+    signal intermed1[num_strides - 1][2][k];
+    signal intermed2[num_strides - 1][2][k];
+    for (var i = 1; i < num_strides; i++) {
+        adders[i - 1] = Secp256k1AddUnequal(n, k);
+        for (var idx = 0; idx < k; idx++) {
+            for (var l = 0; l < 2; l++) {
+                adders[i - 1].a[l][idx] <== partial[i - 1][l][idx];
+                adders[i - 1].b[l][idx] <== multiplexers[i][l].out[idx];
+            }
+        }
+               
+        // partial[i] = has_prev_nonzero[i - 1] * ((1 - iszero[i]) * adders[i - 1].out + iszero[i] * partial[i - 1][0][idx])
+        //              + (1 - has_prev_nonzero[i - 1]) * (1 - iszero[i]) * multiplexers[i]
+        for (var idx = 0; idx < k; idx++) {
+            for (var l = 0; l < 2; l++) {
+                intermed1[i - 1][l][idx] <== iszero[i].out * (partial[i - 1][l][idx] - adders[i - 1].out[l][idx]) + adders[i - 1].out[l][idx];
+                intermed2[i - 1][l][idx] <== multiplexers[i][l].out[idx] - iszero[i].out * multiplexers[i][l].out[idx];
+                partial[i][l][idx] <== has_prev_nonzero[i - 1].out * (intermed1[i - 1][l][idx] - intermed2[i - 1][l][idx]) + intermed2[i - 1][l][idx];
+            }
         }
     }
     
-    iszeros[0] = IsZero();
-    iszeros[0].in <== selectors[0].out;
-    ors[0] = OR();
-    ors[0].a <== 0;
-    ors[0].b <== 1 - iszeros[0].out;
-
-    for (var i = 0; i < num_strides; i++) {
-        if (i > 0) {
-            // ors[i] = 1 if at least one of the selections in privkey up to stride i was non-zero
-            iszeros[i] = IsZero();
-            iszeros[i].in <== selectors[i].out;
-            ors[i] = OR();
-            ors[i].a <== ors[i - 1].out;
-            ors[i].b <== 1 - iszeros[i].out;
-
-            adders[i - 1] = Secp256k1AddUnequal(n, k);
-            for (var idx = 0; idx < k; idx++) {
-                for (var l = 0; l < 2; l++) {
-                    adders[i - 1].a[l][idx] <== partial[i - 1][l][idx];
-                    adders[i - 1].b[l][idx] <== multiplexers[i][l].out[idx];
-                }
-            }
-               
-            // partial[i] = ors[i - 1] * ((1 - iszeros[i]) * adders[i - 1].out + iszeros[i] * partial[i - 1][0][idx])
-            //              + (1 - ors[i - 1]) * (1 - iszeros[i]) * multiplexers[i]
-            for (var idx = 0; idx < k; idx++) {
-                for (var l = 0; l < 2; l++) {
-                    partial_intermed1[i][l][idx] <== iszeros[i].out * (partial[i - 1][l][idx] - adders[i - 1].out[l][idx]) + adders[i - 1].out[l][idx];
-                    partial_intermed2[i][l][idx] <== multiplexers[i][l].out[idx] - iszeros[i].out * multiplexers[i][l].out[idx];
-                    partial[i][l][idx] <== ors[i - 1].out * (partial_intermed1[i][l][idx] - partial_intermed2[i][l][idx]) + partial_intermed2[i][l][idx];
-                }
-            }
-        }
-    }
     for (var i = 0; i < k; i++) {
         for (var l = 0; l < 2; l++) {
             pubkey[l][i] <== partial[num_strides - 1][l][i];
         }
     }
-    for (var i = 0; i < k; i++) {
-        log(pubkey[0][i]);
-    }    
-    for (var i = 0; i < k; i++) {
-        log(pubkey[1][i]);
-    }    
 }
 
 // r, s, msghash, nonce, and privkey have coordinates

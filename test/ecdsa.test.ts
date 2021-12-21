@@ -46,20 +46,25 @@ describe("ECDSAPrivToPubStride", function () {
     // privkey, pub0, pub1
     var test_cases: Array<[bigint, bigint, bigint]> = [];
 
-    // 4 randomly chosen private keys
-    var privkeys: Array<bigint> = [88549154299169935420064281163296845505587953610183896504176354567359434168161n,
+    var privkeys: Array<bigint> = [1023n,
+                                   1024n,
+                                   1025n,
+				   1024n * 1024n,
+				   1024n * 1024n + 1024n,
+                                   88549154299169935420064281163296845505587953610183896504176354567359434168161n,
                                    37706893564732085918706190942542566344879680306879183356840008504374628845468n,
 				   90388020393783788847120091912026443124559466591761394939671630294477859800601n,
 				   110977009687373213104962226057480551605828725303063265716157300460694423838923n];
-    for (var idx = 0; idx < 4; idx++) {
+    for (var idx = 0; idx < 9; idx++) {
         var pubkey: Point = Point.fromPrivateKey(privkeys[idx]);
         test_cases.push([privkeys[idx], pubkey.x, pubkey.y]);
     }
-
+/*
     for (var privkey = 1n; privkey <= 5n; privkey++) {
         var pubkey: Point = Point.fromPrivateKey(privkey);
         test_cases.push([privkey, pubkey.x, pubkey.y]);
     }
+*/
 
     var test_ecdsa_instance = function (keys: [bigint, bigint, bigint]) {
         let privkey = keys[0];
