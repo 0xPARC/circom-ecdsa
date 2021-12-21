@@ -145,3 +145,77 @@ describe("BigMult n = 2, k = 3 exhaustive", function() {
 
     test_cases.forEach(test_bigmult_23);
 });
+
+describe("BigAdd n = 2, k = 3 exhaustive", function() {
+    this.timeout(1000 * 1000);
+
+    // runs circom compilation
+    let circuit: any;
+    before(async function () {
+        circuit = await wasm_tester(path.join(__dirname, "circuits", "test_bigadd_23.circom"));
+    });
+
+    // a, b, sum
+    var test_cases: Array<[bigint, bigint, bigint]> = [];
+    for (var a = 0n; a < 4 * 4 * 4; a++) {
+        for (var b = 0n; b < 4 * 4 * 4; b++) {
+            var sum = a + b;
+            test_cases.push([a, b, sum]);
+        }
+    }
+
+    var test_bigadd_23 = function (x: [bigint, bigint, bigint]) {
+        const [a, b, sum] = x;
+
+        var a_array: bigint[] = bigint_to_array(2, 3, a);
+        var b_array: bigint[] = bigint_to_array(2, 3, b);
+        var sum_array: bigint[] = bigint_to_array(2, 4, sum);
+
+        it('Testing a: ' + a + ' b: ' + b, async function() {
+            let witness = await circuit.calculateWitness({"a": a_array, "b": b_array});
+            expect(witness[1]).to.equal(sum_array[0]);
+            expect(witness[2]).to.equal(sum_array[1]);
+            expect(witness[3]).to.equal(sum_array[2]);
+            expect(witness[4]).to.equal(sum_array[3]);
+        });
+    }
+
+    test_cases.forEach(test_bigadd_23);
+});
+
+describe("BigAdd n = 1, k = 5 exhaustive", function() {
+    this.timeout(1000 * 1000);
+
+    // runs circom compilation
+    let circuit: any;
+    before(async function () {
+        circuit = await wasm_tester(path.join(__dirname, "circuits", "test_bigadd_15.circom"));
+    });
+
+    // a, b, sum
+    var test_cases: Array<[bigint, bigint, bigint]> = [];
+    for (var a = 0n; a < 2 * 2 * 2 * 2 * 2; a++) {
+        for (var b = 0n; b < 2 * 2 * 2 * 2 * 2; b++) {
+            var sum = a + b;
+            test_cases.push([a, b, sum]);
+        }
+    }
+
+    var test_bigadd_15 = function (x: [bigint, bigint, bigint]) {
+        const [a, b, sum] = x;
+
+        var a_array: bigint[] = bigint_to_array(1, 5, a);
+        var b_array: bigint[] = bigint_to_array(1, 5, b);
+        var sum_array: bigint[] = bigint_to_array(1, 5, sum);
+
+        it('Testing a: ' + a + ' b: ' + b, async function() {
+            let witness = await circuit.calculateWitness({"a": a_array, "b": b_array});
+            expect(witness[1]).to.equal(sum_array[0]);
+            expect(witness[2]).to.equal(sum_array[1]);
+            expect(witness[3]).to.equal(sum_array[2]);
+            expect(witness[4]).to.equal(sum_array[3]);
+        });
+    }
+
+    test_cases.forEach(test_bigadd_15);
+});
