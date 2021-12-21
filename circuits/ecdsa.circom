@@ -13,7 +13,7 @@ include "ecdsa_stride_func.circom";
 template ECDSAPrivToPub(n, k) {
     signal input privkey[k];
     signal output pubkey[2][k];
-    
+
     component n2b[k];
     for (var i = 0; i < k; i++) {
         n2b[i] = Num2Bits(n);
@@ -24,7 +24,7 @@ template ECDSAPrivToPub(n, k) {
 
     signal partial[k * n][2][k];
     signal partial_intermed1[k * n][2][k];
-    signal partial_intermed2[k * n][2][k];    
+    signal partial_intermed2[k * n][2][k];
     component adders[n * k - 1];
     component ors[n * k];
 
@@ -60,7 +60,7 @@ template ECDSAPrivToPub(n, k) {
                    adders[n * i + j - 1].b[0][idx] <== powers[n * i + j][0][idx];
                    adders[n * i + j - 1].b[1][idx] <== powers[n * i + j][1][idx];
                }
-               
+
                // partial[n * i + j] = ors[n * i + j - 1] * (n2b[i].out[j] * adders[n * j + j - 1].out + (1 - n2b[i].out[j]) * partial[n * i + j - 1][0][idx]) + (1 - ors[n * i + j - 1]) * n2b[i].out[j] * powers[n * i + j]
                for (var idx = 0; idx < k; idx++) {
                    partial_intermed1[n * i + j][0][idx] <== n2b[i].out[j] * (adders[n * i + j - 1].out[0][idx] - partial[n * i + j - 1][0][idx]) + partial[n * i + j - 1][0][idx];
@@ -85,7 +85,7 @@ template ECDSAPrivToPubStride(n, k, stride) {
     assert(stride == 2 || stride == 8 || stride == 10);
     signal input privkey[k];
     signal output pubkey[2][k];
-    
+
     component n2b[k];
     for (var i = 0; i < k; i++) {
         n2b[i] = Num2Bits(n);
@@ -103,10 +103,10 @@ template ECDSAPrivToPubStride(n, k, stride) {
     }
     if (stride == 8) {
         powers = get_g_pow_stride8_table(86, 3, 258);
-    }    
+    }
     if (stride == 10) {
         powers = get_g_pow_stride10_table(86, 3, 258);
-    }    
+    }
 
     // contains a dummy point to stand in when we are adding 0
     var dummy[2][3];
@@ -118,7 +118,7 @@ template ECDSAPrivToPubStride(n, k, stride) {
     dummy[1][1] = 58274658945430015619912323;
     dummy[1][2] = 4380191706425255173800171;
 
-    // selector[i] contains a value in [0, ..., 2**i - 1] 
+    // selector[i] contains a value in [0, ..., 2**i - 1]
     component selectors[num_strides];
     for (var i = 0; i < num_strides; i++) {
         selectors[i] = Bits2Num(stride);
@@ -151,7 +151,7 @@ template ECDSAPrivToPubStride(n, k, stride) {
         }
     }
 
-    component iszero[num_strides];         
+    component iszero[num_strides];
     for (var i = 0; i < num_strides; i++) {
         iszero[i] = IsZero();
         iszero[i].in <== selectors[i].out;
@@ -186,7 +186,7 @@ template ECDSAPrivToPubStride(n, k, stride) {
                 adders[i - 1].b[l][idx] <== multiplexers[i][l].out[idx];
             }
         }
-               
+
         // partial[i] = has_prev_nonzero[i - 1] * ((1 - iszero[i]) * adders[i - 1].out + iszero[i] * partial[i - 1][0][idx])
         //              + (1 - has_prev_nonzero[i - 1]) * (1 - iszero[i]) * multiplexers[i]
         for (var idx = 0; idx < k; idx++) {
@@ -197,7 +197,7 @@ template ECDSAPrivToPubStride(n, k, stride) {
             }
         }
     }
-    
+
     for (var i = 0; i < k; i++) {
         for (var l = 0; l < 2; l++) {
             pubkey[l][i] <== partial[num_strides - 1][l][i];
@@ -206,26 +206,108 @@ template ECDSAPrivToPubStride(n, k, stride) {
 }
 
 // r, s, msghash, nonce, and privkey have coordinates
-// encoded with k registers of n bits each 
+// encoded with k registers of n bits each
 // signature is (r, s)
 template ECDSASign(n, k) {
     signal input privkey[k];
     signal input msghash[k];
     signal input nonce[k];
-    
     signal output r[k];
     signal output s[k];
+
+    // compute (x1, y1) = nonce * G
+    // TODO(tony): use stride version; rename this? same operation though
+    component nonceMult = ECDSAPrivToPub(n, k);
+    for (var i = 0; i < k; i++) {
+        nonceMult.privkey[i] <== nonce[i];
+    }
+    signal p1[k][2];
+    for (var i = 0; i < k; i++) {
+        p1[i][0] <== nonceMult.pubkey[i][0];
+        p1[i][1] <== nonceMult.pubkey[i][1];
+    }
+
+    // compute r = x1 % N
+    // assume that r != 0 for now
+    // need to be big enough to fit the order
+    assert(n * k >= 256);
+    // TODO(tony): rewrite in a way that works...
+    signal nVal[k];
+    nConst = 115792089237316195423570985008687907852837564279074904382605163141518161494337;
+    for (var i = 0; i < k; i++) {
+        var chunk = (Ncost >> i) & ((1 << k) - 1);
+        nVal[i] <== chunk;
+    }
+    component rMod = BigMod(n, k);
+    for (var i = 0; i < k; i++) {
+        rMod.a[i] <== p1[i][0];
+        rMod.b[i] <== nVal[i];
+    }
+    for (var i = 0; i < k; i++) {
+        r[i] <== rMod.out[i];
+    }
+
+    // get the 256 left-most bits of msghash
+    // need to be big enough to fit hash value
+    assert(n * k >= 256);
+    signal z[k];
+    for (var i = 0; i < k; i++) {
+        if (i * n < 256) {
+            z[i] <== msghash[i];
+        }
+        else {
+            z[i] <== 0;
+        }
+    }
+
+    // compute s = nonce^{-1} (z + r * privkey) % N
+    // assume that s != 0 for now
+    component rMul = BigMultModP(n, k);
+    for (var i = 0; i < k; i++) {
+        rMul.a[i] <== r[i];
+        rMul.b[i] <== privkey[i];
+        rMul.p[i] <== nVal[i];
+    }
+    component zAdd = BigAdd(n, k);
+    for (var i = 0; i < k; i++) {
+        zAdd.a[i] <== rMul.out[i];
+        zAdd.b[i] <== z[i];
+    }
+    component sMod = BigMod(n, k);
+    for (var i = 0; i < k; i++) {
+        sMod.a[i] <== zAdd.out[i];
+        sMod.b[i] <== nVal[i];
+    }
+    component nInv = BigModInv(n, k);
+    for (var i = 0; i < k; i++) {
+        nInv.a[i] <== nonce[i];
+        nInv.b[i] <== p[i];
+    }
+    signal nonceInv[k];
+    for (var i = 0; i < k; i++) {
+        nonceInv[i] <== nInv.out[i];
+    }
+    component sMul = BigMultModP(n, k);
+    for (var i = 0; i < k; i++) {
+        sMul.a[i] <== sMod.out[i];
+        sMul.b[i] <== nonceInv[i];
+        sMul.p[i] <== nVal[i];
+    }
+
+    for (var i = 0; i < k; i++) {
+        s[i] <== sMul.out[i];
+    }
 }
 
 // r, s, msghash, nonce, and privkey have coordinates
-// encoded with k registers of n bits each 
+// encoded with k registers of n bits each
 // v is a bit
 // signature is (r, s, v)
 template ECDSAExtendedSign(n, k) {
     signal input privkey[k];
     signal input msghash[k];
     signal input nonce[k];
-    
+
     signal output r[k];
     signal output s[k];
     signal output v;
@@ -236,7 +318,7 @@ template ECDSAExtendedSign(n, k) {
 // signature is (r, s)
 template ECDSAVerify(n, k) {
     signal input r[k];
-    signal input s[k];     
+    signal input s[k];
     signal input msghash[k];
     signal input pubkey[2][k];
 
