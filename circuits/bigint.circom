@@ -20,6 +20,7 @@ template ModSum(n) {
     sum <== a + b - carry * (1 << n);
 }
 
+// a - b
 template ModSub(n) {
     assert(n <= 252);
     signal input a;
@@ -30,24 +31,26 @@ template ModSub(n) {
     lt.in[0] <== a;
     lt.in[1] <== b;
     borrow <== lt.out;
-    out <== borrow * (1<<n) + a - b;
+    out <== borrow * (1 << n) + a - b;
 }
 
 // a - b - c
+// assume a - b - c + 2**n >= 0
 template ModSubThree(n) {
     assert(n + 2 <= 253);
     signal input a;
     signal input b;
     signal input c;
+    assert(a - b - c + (1 << n) >= 0);
     signal output out;
     signal output borrow;
-    signal tmp;
-    tmp <== b+c;
+    signal b_plus_c;
+    b_plus_c <== b + c;
     component lt = LessThan(n + 1);
     lt.in[0] <== a;
-    lt.in[1] <== tmp;
+    lt.in[1] <== b_plus_c;
     borrow <== lt.out;
-    out <== borrow*(1<<n) + a - tmp;
+    out <== borrow * (1 << n) + a - b_plus_c;
 }
 
 template ModSumThree(n) {
@@ -432,6 +435,8 @@ template BigSub(n, k) {
     underflow <== unit[k - 2].borrow;
 }
 
+// calculates (a - b) % p, where a, b < p
+// note: does not assume a >= b
 template BigSubModP(n, k){
     assert(n <= 252);
     signal input a[k];
@@ -452,8 +457,8 @@ template BigSubModP(n, k){
     }
     signal tmp[k];
     for (var i = 0; i < k; i++){
-        tmp[i] <== (1-flag) * sub.out[i];
-        out[i] <==  tmp[i] + flag * add.out[i];
+        tmp[i] <== (1 - flag) * sub.out[i];
+        out[i] <== tmp[i] + flag * add.out[i];
     }
 }
 
