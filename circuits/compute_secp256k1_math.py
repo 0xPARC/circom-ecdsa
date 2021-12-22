@@ -138,6 +138,6 @@ def get_ecdsa_func_str(n, k, stride_list):
         ret_str = ret_str + cache_str
     return ret_str
 
-stride_list = [2, 8, 10]
+stride_list = [10]
 ecdsa_func_str = get_ecdsa_func_str(86, 3, stride_list)
 print(ecdsa_func_str)
