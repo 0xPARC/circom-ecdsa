@@ -347,10 +347,12 @@ template ECDSAVerify(n, k) {
         sinv_check.a[idx] <== sinv[idx];
         sinv_check.b[idx] <== s[idx];
         sinv_check.p[idx] <== order[idx];
+    }
+    for (var idx = 0; idx < k; idx++) {    
         if (idx > 0) {
             sinv_check.out[idx] === 0;
         }
-        else {
+        if (idx == 0) {
             sinv_check.out[idx] === 1;
         }
     }
