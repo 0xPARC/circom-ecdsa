@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "./build_circuits.sh",
+    "build_verify": "./build_verify.sh",
     "test": "mocha -r ts-node/register 'test/**/*.ts'"
   },
   "repository": "git@github.com:0xPARC/circom-secp256k1.git",
