@@ -1,7 +1,7 @@
 import path = require("path");
 
 import { expect, assert } from 'chai';
-import { getPublicKey, Point } from '@noble/secp256k1';
+import { getPublicKey, sign, Point } from '@noble/secp256k1';
 const circom_tester = require('circom_tester');
 const wasm_tester = circom_tester.wasm;
 
@@ -18,6 +18,21 @@ function bigint_to_tuple(x: bigint) {
     var x_temp: bigint = x;
     for (var idx = 0; idx < 3; idx++) {
         ret[idx] = x_temp % mod;
+        x_temp = x_temp / mod;
+    }
+    return ret;
+}
+
+function bigint_to_array(n: number, k: number, x: bigint) {
+    let mod: bigint = 1n;
+    for (var idx = 0; idx < n; idx++) {
+        mod = mod * 2n;
+    }
+
+    let ret: bigint[] = [];
+    var x_temp: bigint = x;
+    for (var idx = 0; idx < k; idx++) {
+        ret.push(x_temp % mod);
         x_temp = x_temp / mod;
     }
     return ret;
@@ -102,9 +117,104 @@ describe("ECDSAPrivToPubStride", function () {
     test_cases.forEach(test_ecdsa_instance);
 });
 
-describe("Sample test set", function () {
-    it('should run a test properly', function () {
-        const myNumber = 12;
-        expect(myNumber).to.equal(12);
+// bigendian
+function bigint_to_Uint8Array(x: bigint) {
+    var ret: Uint8Array = new Uint8Array(32);
+    for (var idx = 31; idx >= 0; idx--) {
+        ret[idx] = Number(x % 256n);
+	x = x / 256n;
+    }
+    return ret;
+}
+
+// bigendian
+function Uint8Array_to_bigint(x: Uint8Array) {
+    var ret: bigint = 0n;
+    for (var idx = 0; idx < x.length; idx++) {
+        ret = ret * 256n;
+	ret = ret + BigInt(x[idx]);
+    }
+    return ret;
+}
+
+describe("ECDSAVerify", function () {
+    this.timeout(1000 * 1000);
+
+    // privkey, msghash, pub0, pub1
+    var test_cases: Array<[bigint, bigint, bigint, bigint]> = [];
+    var privkeys: Array<bigint> = [88549154299169935420064281163296845505587953610183896504176354567359434168161n,
+                                   37706893564732085918706190942542566344879680306879183356840008504374628845468n,
+                                   90388020393783788847120091912026443124559466591761394939671630294477859800601n,
+                                   110977009687373213104962226057480551605828725303063265716157300460694423838923n];
+    for (var idx = 0; idx < privkeys.length; idx++) {
+        var pubkey: Point = Point.fromPrivateKey(privkeys[idx]);
+        var msghash_bigint: bigint = 1234n;
+	test_cases.push([privkeys[idx], msghash_bigint, pubkey.x, pubkey.y]);
+    }
+
+    let circuit: any;
+    before(async function () {
+        circuit = await wasm_tester(path.join(__dirname, "circuits", "test_ecdsa_verify.circom"));
     });
+
+    var test_ecdsa_verify = function (test_case: [bigint, bigint, bigint, bigint]) {
+        let privkey = test_case[0];
+	let msghash_bigint = test_case[1];
+        let pub0 = test_case[2];
+        let pub1 = test_case[3];
+
+        var msghash: Uint8Array = bigint_to_Uint8Array(msghash_bigint);
+
+        it('Testing correct sig: privkey: ' + privkey + ' msghash: ' + msghash_bigint + ' pub0: ' + pub0 + ' pub1: ' + pub1, async function() {
+            // in compact format: r (big-endian), 32-bytes + s (big-endian), 32-bytes
+            var sig: Uint8Array = await sign(msghash, bigint_to_Uint8Array(privkey), {canonical: true, der: false})
+            var r: Uint8Array = sig.slice(0, 32);
+            var r_bigint: bigint = Uint8Array_to_bigint(r);
+            var s: Uint8Array = sig.slice(32, 64);
+            var s_bigint:bigint = Uint8Array_to_bigint(s);	
+
+            var priv_array: bigint[] = bigint_to_array(86, 3, privkey);
+            var r_array: bigint[] = bigint_to_array(86, 3, r_bigint);
+            var s_array: bigint[] = bigint_to_array(86, 3, s_bigint);
+            var msghash_array: bigint[] = bigint_to_array(86, 3, msghash_bigint);
+            var pub0_array: bigint[] = bigint_to_array(86, 3, pub0);
+            var pub1_array: bigint[] = bigint_to_array(86, 3, pub1);
+	    var res = 1n;
+
+            console.log('r', r_bigint);
+            console.log('s', s_bigint);	
+            let witness = await circuit.calculateWitness({"r": r_array,
+	                                                  "s": s_array,
+							  "msghash": msghash_array,
+							  "pubkey": [pub0_array, pub1_array]});
+            expect(witness[1]).to.equal(res);
+        });
+
+        it('Testing incorrect sig: privkey: ' + privkey + ' msghash: ' + msghash_bigint + ' pub0: ' + pub0 + ' pub1: ' + pub1, async function() {
+            // in compact format: r (big-endian), 32-bytes + s (big-endian), 32-bytes
+            var sig: Uint8Array = await sign(msghash, bigint_to_Uint8Array(privkey), {canonical: true, der: false})
+            var r: Uint8Array = sig.slice(0, 32);
+            var r_bigint: bigint = Uint8Array_to_bigint(r);
+            var s: Uint8Array = sig.slice(32, 64);
+            var s_bigint:bigint = Uint8Array_to_bigint(s);	
+
+            var priv_array: bigint[] = bigint_to_array(86, 3, privkey);
+            var r_array: bigint[] = bigint_to_array(86, 3, r_bigint + 1n);
+            var s_array: bigint[] = bigint_to_array(86, 3, s_bigint);
+            var msghash_array: bigint[] = bigint_to_array(86, 3, msghash_bigint);
+            var pub0_array: bigint[] = bigint_to_array(86, 3, pub0);
+            var pub1_array: bigint[] = bigint_to_array(86, 3, pub1);
+	    var res = 0n;
+	    
+            console.log('r', r_bigint + 1n);
+            console.log('s', s_bigint);	
+            let witness = await circuit.calculateWitness({"r": r_array,
+	                                                  "s": s_array,
+							  "msghash": msghash_array,
+							  "pubkey": [pub0_array, pub1_array]});
+            expect(witness[1]).to.equal(res);
+        });
+    }
+
+    test_cases.forEach(test_ecdsa_verify);
 });
