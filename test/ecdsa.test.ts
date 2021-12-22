@@ -188,6 +188,7 @@ describe("ECDSAVerify", function () {
 							  "msghash": msghash_array,
 							  "pubkey": [pub0_array, pub1_array]});
             expect(witness[1]).to.equal(res);
+            await circuit.checkConstraints(witness);	    
         });
 
         it('Testing incorrect sig: privkey: ' + privkey + ' msghash: ' + msghash_bigint + ' pub0: ' + pub0 + ' pub1: ' + pub1, async function() {
@@ -213,6 +214,7 @@ describe("ECDSAVerify", function () {
 							  "msghash": msghash_array,
 							  "pubkey": [pub0_array, pub1_array]});
             expect(witness[1]).to.equal(res);
+            await circuit.checkConstraints(witness);	    
         });
     }
 
