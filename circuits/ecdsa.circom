@@ -321,11 +321,14 @@ template ECDSAExtendedSign(n, k) {
 // encoded with k registers of n bits each
 // signature is (r, s)
 template ECDSAVerify(n, k) {
+    assert(k >= 2);
+    assert(k <= 100);
+
     signal input r[k];
     signal input s[k];
     signal input msghash[k];
     signal input pubkey[2][k];
-    
+
     signal output result;
 
     var p[100] = get_secp256k1_prime(n, k);
@@ -337,21 +340,27 @@ template ECDSAVerify(n, k) {
     for (var idx = 0; idx < k; idx++) {
         sinv[idx] <-- sinv_comp[idx];
         sinv_range_checks[idx] = Num2Bits(n);
-	sinv_range_checks[idx].in <== sinv[idx];
+        sinv_range_checks[idx].in <== sinv[idx];
     }
     component sinv_check = BigMultModP(n, k);
     for (var idx = 0; idx < k; idx++) {
         sinv_check.a[idx] <== sinv[idx];
-	sinv_check.b[idx] <== s[idx];
-	sinv_check.p[idx] <== order[idx];
+        sinv_check.b[idx] <== s[idx];
+        sinv_check.p[idx] <== order[idx];
+        if (idx > 0) {
+            sinv_check.out[idx] === 0;
+        }
+        else {
+            sinv_check.out[idx] === 1;
+        }
     }
 
     // compute (h * sinv) mod n
     component g_coeff = BigMultModP(n, k);
     for (var idx = 0; idx < k; idx++) {
         g_coeff.a[idx] <== sinv[idx];
-	g_coeff.b[idx] <== msghash[idx];
-	g_coeff.p[idx] <== order[idx];
+        g_coeff.b[idx] <== msghash[idx];
+        g_coeff.p[idx] <== order[idx];
     }
 
     // compute (h * sinv) * G
@@ -364,15 +373,15 @@ template ECDSAVerify(n, k) {
     component pubkey_coeff = BigMultModP(n, k);
     for (var idx = 0; idx < k; idx++) {
         pubkey_coeff.a[idx] <== sinv[idx];
-	pubkey_coeff.b[idx] <== r[idx];
-	pubkey_coeff.p[idx] <== order[idx];
+        pubkey_coeff.b[idx] <== r[idx];
+        pubkey_coeff.p[idx] <== order[idx];
     }
 
     // compute (r * sinv) * pubkey
     component pubkey_mult = Secp256k1ScalarMult(n, k);
     for (var idx = 0; idx < k; idx++) {
         pubkey_mult.scalar[idx] <== pubkey_coeff.out[idx];
-	pubkey_mult.point[0][idx] <== pubkey[0][idx];
+        pubkey_mult.point[0][idx] <== pubkey[0][idx];
         pubkey_mult.point[1][idx] <== pubkey[1][idx];
     }
 
@@ -382,7 +391,7 @@ template ECDSAVerify(n, k) {
         sum_res.a[0][idx] <== g_mult.pubkey[0][idx];
         sum_res.a[1][idx] <== g_mult.pubkey[1][idx];
         sum_res.b[0][idx] <== pubkey_mult.out[0][idx];
-        sum_res.b[1][idx] <== pubkey_mult.out[1][idx];	
+        sum_res.b[1][idx] <== pubkey_mult.out[1][idx];
     }
 
     // compare sum_res.x with r
@@ -394,10 +403,10 @@ template ECDSAVerify(n, k) {
         compare[idx].in[1] <== sum_res.out[0][idx];
 
         if (idx > 0) {
-	    if (idx == 1) {
-	        num_equal[idx - 1] <== compare[0].out + compare[1].out;
+            if (idx == 1) {
+                num_equal[idx - 1] <== compare[0].out + compare[1].out;
             } else {
-	        num_equal[idx - 1] <== num_equal[idx - 2] + compare[idx].out;
+                num_equal[idx - 1] <== num_equal[idx - 2] + compare[idx].out;
             }
         }
     }
