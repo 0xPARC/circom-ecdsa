@@ -55,6 +55,7 @@ describe("ECDSAPrivToPubStride", function () {
         expect(Fr.e(Scalar.fromString(witness[4]))).to.equal(Fr.e(Scalar.fromString("74838692406509378584339674")));
         expect(Fr.e(Scalar.fromString(witness[5]))).to.equal(Fr.e(Scalar.fromString("64932989450846822570582095")));
         expect(Fr.e(Scalar.fromString(witness[6]))).to.equal(Fr.e(Scalar.fromString("8078726494313086148292984")));
+        await circuit.checkConstraints(witness);
     });
 
     // privkey, pub0, pub1
@@ -94,6 +95,7 @@ describe("ECDSAPrivToPubStride", function () {
             expect(witness[4]).to.equal(pub1_tuple[0]);
             expect(witness[5]).to.equal(pub1_tuple[1]);
             expect(witness[6]).to.equal(pub1_tuple[2]);
+            await circuit.checkConstraints(witness);
         });
     }
 

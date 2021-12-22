@@ -58,6 +58,7 @@ describe("BigMod n = 2, k = 2 exhaustive", function() {
             expect(witness[3]).to.equal(div_array[2]);
             expect(witness[4]).to.equal(mod_array[0]);
             expect(witness[5]).to.equal(mod_array[1]);
+            await circuit.checkConstraints(witness);
         });
     }
 
@@ -98,6 +99,7 @@ describe("BigMod n = 3, k = 2 stride", function() {
             expect(witness[3]).to.equal(div_array[2]);
             expect(witness[4]).to.equal(mod_array[0]);
             expect(witness[5]).to.equal(mod_array[1]);
+            await circuit.checkConstraints(witness);
         });
     }
 
@@ -139,6 +141,7 @@ describe("BigSubModP n = 3, k = 2, p in {7, 37} exhaustive", function() {
             });
             expect(witness[1]).to.equal(sub_array[0]);
             expect(witness[2]).to.equal(sub_array[1]);
+            await circuit.checkConstraints(witness);
         });
     }
 
@@ -178,6 +181,7 @@ describe("BigMult n = 2, k = 3 exhaustive", function() {
             expect(witness[4]).to.equal(product_array[3]);
             expect(witness[5]).to.equal(product_array[4]);
             expect(witness[6]).to.equal(product_array[5]);
+            await circuit.checkConstraints(witness);
         });
     }
 
@@ -215,6 +219,7 @@ describe("BigAdd n = 2, k = 3 exhaustive", function() {
             expect(witness[2]).to.equal(sum_array[1]);
             expect(witness[3]).to.equal(sum_array[2]);
             expect(witness[4]).to.equal(sum_array[3]);
+            await circuit.checkConstraints(witness);
         });
     }
 
@@ -252,6 +257,7 @@ describe("BigAdd n = 1, k = 5 exhaustive", function() {
             expect(witness[2]).to.equal(sum_array[1]);
             expect(witness[3]).to.equal(sum_array[2]);
             expect(witness[4]).to.equal(sum_array[3]);
+            await circuit.checkConstraints(witness);
         });
     }
 
@@ -288,6 +294,7 @@ describe("BigSub n = 2, k = 3 exhaustive", function() {
             expect(witness[1]).to.equal(diff_array[0]);
             expect(witness[2]).to.equal(diff_array[1]);
             expect(witness[3]).to.equal(diff_array[2]);
+            await circuit.checkConstraints(witness);
         });
     }
 
@@ -324,6 +331,7 @@ describe("BigSub n = 1, k = 5 exhaustive", function() {
             expect(witness[1]).to.equal(diff_array[0]);
             expect(witness[2]).to.equal(diff_array[1]);
             expect(witness[3]).to.equal(diff_array[2]);
+            await circuit.checkConstraints(witness);
         });
     }
 
@@ -357,6 +365,7 @@ describe("BigLessThan n = 2, k = 3 exhaustive", function() {
         it('Testing a: ' + a + ' b: ' + b, async function() {
             let witness = await circuit.calculateWitness({"a": a_array, "b": b_array});
             expect(witness[1]).to.equal(islessthan);
+            await circuit.checkConstraints(witness);
         });
     }
 

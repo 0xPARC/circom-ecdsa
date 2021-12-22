@@ -81,6 +81,7 @@ describe("Secp256k1AddUnequal", function () {
             expect(witness[4]).to.equal(sumy_array[0]);
             expect(witness[5]).to.equal(sumy_array[1]);
             expect(witness[6]).to.equal(sumy_array[2]);
+            await circuit.checkConstraints(witness);
         });
     }
 
