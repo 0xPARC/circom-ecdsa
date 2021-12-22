@@ -273,13 +273,13 @@ template Secp256k1ScalarMult(n, k) {
 		    adders[n * i + j].b[1][idx] <== point[1][idx];
 		}
                 // partial[n * i + j]
-		// = has_prev_non_zero[n * i + j] * ((1 - n2b[i].out[j]) * doublers[n * i + j] + n2b[i].out[j] * adders[n * i + j])
-		//   + (1 - has_prev_non_zero[n * i + j]) * point
+		// = has_prev_non_zero[n * i + j + 1] * ((1 - n2b[i].out[j]) * doublers[n * i + j] + n2b[i].out[j] * adders[n * i + j])
+		//   + (1 - has_prev_non_zero[n * i + j + 1]) * point
 		for (var idx = 0; idx < k; idx++) {
 		    intermed[n * i + j][0][idx] <== n2b[i].out[j] * (adders[n * i + j].out[0][idx] - doublers[n * i + j].out[0][idx]) + doublers[n * i + j].out[0][idx];
 		    intermed[n * i + j][1][idx] <== n2b[i].out[j] * (adders[n * i + j].out[1][idx] - doublers[n * i + j].out[1][idx]) + doublers[n * i + j].out[1][idx];
-		    partial[n * i + j][0][idx] <== has_prev_non_zero[n * i + j].out * (intermed[n * i + j][0][idx] - point[0][idx]) + point[0][idx];
-		    partial[n * i + j][1][idx] <== has_prev_non_zero[n * i + j].out * (intermed[n * i + j][1][idx] - point[1][idx]) + point[1][idx];
+		    partial[n * i + j][0][idx] <== has_prev_non_zero[n * i + j + 1].out * (intermed[n * i + j][0][idx] - point[0][idx]) + point[0][idx];
+		    partial[n * i + j][1][idx] <== has_prev_non_zero[n * i + j + 1].out * (intermed[n * i + j][1][idx] - point[1][idx]) + point[1][idx];
 		}
             }
 	}
