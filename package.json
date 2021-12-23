@@ -6,6 +6,7 @@
   "scripts": {
     "build": "./build_circuits.sh",
     "build_verify": "./build_verify.sh",
+    "build_groupsig": "./build_groupsig.sh",
     "test": "NODE_OPTIONS=--max_old_space_size=56000 mocha -r ts-node/register 'test/**/*.ts'",
     "groupsig": "npx ts-node scripts/groupsign.ts"
   },

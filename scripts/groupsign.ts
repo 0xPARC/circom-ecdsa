@@ -61,15 +61,8 @@ async function run() {
             res(ans);
         })
     })
-    /*
-    if (!isValidPrivateKey(privKeyStr)) {
-        console.log('invalid private key');
-        return;
-    }*/
     const wallet = new Wallet(privKeyStr);
     console.log(`Your address is: ${wallet.address}`);
-    console.log(`Your private key circom 86x3 array representation is: ${toWordArray(BigInt(privKeyStr), 3, 86)}`);
-    console.log(`Your public key bigint representation is: ${BigInt(wallet.address).toString()}`);
 
     const groupAddr1 = await new Promise<string>((res) => {
         rl.question("Enter address 1 for your group:\n", (ans: string) => {

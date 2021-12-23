@@ -21,3 +21,9 @@ This process will also generate and verify a proof for a dummy input in `test/in
 `yarn test` at the top level to run tests.
 
 Circuit unit tests are written in typescript, in the `test` directory using `chai`, `mocha`, and `circom_tester`. 
+
+## Groupsig Demo
+
+`yarn build_groupsig` to compile the groupsig circuit and generate keys.
+
+Then `yarn groupsig` to run the demo.
