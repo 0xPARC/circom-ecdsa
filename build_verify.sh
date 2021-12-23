@@ -34,7 +34,7 @@ echo "DONE ($((end-start))s)"
 echo "** Generating initial .zkey"
 start=`date +%s`
 set -x
-NODE_OPTIONS=--max_old_space_size=56000 npx snarkjs groth16 setup "$BUILD_DIR"/test_ecdsa_verify.r1cs "$PHASE1" "$BUILD_DIR"/test_ecdsa_ve#rify_0.zkey
+NODE_OPTIONS=--max_old_space_size=56000 npx snarkjs groth16 setup "$BUILD_DIR"/test_ecdsa_verify.r1cs "$PHASE1" "$BUILD_DIR"/test_ecdsa_verify_0.zkey
 { set +x; } 2>/dev/null
 end=`date +%s`
 echo "DONE ($((end-start))s)"
