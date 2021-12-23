@@ -103,7 +103,8 @@ async function run() {
 
     console.log(input);
 
-    // for some reason fullprove is broken: https://github.com/iden3/snarkjs/issues/107
+    // for some reason fullprove is broken currently: https://github.com/iden3/snarkjs/issues/107
+    console.log('generating witness...');
     const wtnsStart = Date.now();
     await generateWitness(input);
     console.log(`generated witness. took ${Date.now() - wtnsStart}ms`);
@@ -130,6 +131,8 @@ async function run() {
         console.log("Invalid proof");
     }
     console.log(`verification took ${Date.now() - verifyStart}ms`);
+    
+    process.exit(0);
 }
 
 run();
