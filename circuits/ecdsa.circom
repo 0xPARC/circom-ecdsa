@@ -127,116 +127,6 @@ template ECDSAPrivToPub(n, k) {
     }
 }
 
-/*
-// r, s, msghash, nonce, and privkey have coordinates
-// encoded with k registers of n bits each
-// signature is (r, s)
-template ECDSASign(n, k) {
-    signal input privkey[k];
-    signal input msghash[k];
-    signal input nonce[k];
-    signal output r[k];
-    signal output s[k];
-
-    // compute (x1, y1) = nonce * G
-    // TODO(tony): use stride version; rename this? same operation though
-    component nonceMult = ECDSAPrivToPub(n, k);
-    for (var i = 0; i < k; i++) {
-        nonceMult.privkey[i] <== nonce[i];
-    }
-    signal p1[k][2];
-    for (var i = 0; i < k; i++) {
-        p1[i][0] <== nonceMult.pubkey[i][0];
-        p1[i][1] <== nonceMult.pubkey[i][1];
-    }
-
-    // compute r = x1 % N
-    // assume that r != 0 for now
-    // need to be big enough to fit the order
-    assert(n * k >= 256);
-    // TODO(tony): rewrite in a way that works...
-    signal nVal[k];
-    var nConst = 115792089237316195423570985008687907852837564279074904382605163141518161494337;
-    for (var i = 0; i < k; i++) {
-        var chunk = (nConst >> i) & ((1 << k) - 1);
-        nVal[i] <== chunk;
-    }
-    component rMod = BigMod(n, k);
-    for (var i = 0; i < k; i++) {
-        rMod.a[i] <== p1[i][0];
-        rMod.b[i] <== nVal[i];
-    }
-    for (var i = 0; i < k; i++) {
-        r[i] <== rMod.out[i];
-    }
-
-    // get the 256 left-most bits of msghash
-    // need to be big enough to fit hash value
-    assert(n * k >= 256);
-    signal z[k];
-    for (var i = 0; i < k; i++) {
-        if (i * n < 256) {
-            z[i] <== msghash[i];
-        }
-        else {
-            z[i] <== 0;
-        }
-    }
-
-    // compute s = nonce^{-1} (z + r * privkey) % N
-    // assume that s != 0 for now
-    component rMul = BigMultModP(n, k);
-    for (var i = 0; i < k; i++) {
-        rMul.a[i] <== r[i];
-        rMul.b[i] <== privkey[i];
-        rMul.p[i] <== nVal[i];
-    }
-    component zAdd = BigAdd(n, k);
-    for (var i = 0; i < k; i++) {
-        zAdd.a[i] <== rMul.out[i];
-        zAdd.b[i] <== z[i];
-    }
-    component sMod = BigMod(n, k);
-    for (var i = 0; i < k; i++) {
-        sMod.a[i] <== zAdd.out[i];
-        sMod.b[i] <== nVal[i];
-    }
-    component nInv = BigModInv(n, k);
-    for (var i = 0; i < k; i++) {
-        nInv.a[i] <== nonce[i];
-        nInv.b[i] <== nVal[i];
-    }
-    signal nonceInv[k];
-    for (var i = 0; i < k; i++) {
-        nonceInv[i] <== nInv.out[i];
-    }
-    component sMul = BigMultModP(n, k);
-    for (var i = 0; i < k; i++) {
-        sMul.a[i] <== sMod.out[i];
-        sMul.b[i] <== nonceInv[i];
-        sMul.p[i] <== nVal[i];
-    }
-
-    for (var i = 0; i < k; i++) {
-        s[i] <== sMul.out[i];
-    }
-}
-*/
-
-// r, s, msghash, nonce, and privkey have coordinates
-// encoded with k registers of n bits each
-// v is a bit
-// signature is (r, s, v)
-template ECDSAExtendedSign(n, k) {
-    signal input privkey[k];
-    signal input msghash[k];
-    signal input nonce[k];
-
-    signal output r[k];
-    signal output s[k];
-    signal output v;
-}
-
 // r, s, msghash, and pubkey have coordinates
 // encoded with k registers of n bits each
 // signature is (r, s)
@@ -338,6 +228,7 @@ template ECDSAVerify(n, k) {
     result <== res_comp.out;
 }
 
+// TODO: implement ECDSA extended verify
 // r, s, and msghash have coordinates
 // encoded with k registers of n bits each
 // v is a single bit

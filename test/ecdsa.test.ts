@@ -149,7 +149,7 @@ describe("ECDSAVerify", function () {
     for (var idx = 0; idx < privkeys.length; idx++) {
         var pubkey: Point = Point.fromPrivateKey(privkeys[idx]);
         var msghash_bigint: bigint = 1234n;
-	test_cases.push([privkeys[idx], msghash_bigint, pubkey.x, pubkey.y]);
+	    test_cases.push([privkeys[idx], msghash_bigint, pubkey.x, pubkey.y]);
     }
 
     let circuit: any;

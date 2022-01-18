@@ -4,11 +4,11 @@
   "description": "bigint arithmetic and secp256k1 ecc operations in circom",
   "main": "index.js",
   "scripts": {
-    "build": "./build_circuits.sh",
-    "build_verify": "./build_verify.sh",
-    "build_groupsig": "./build_groupsig.sh",
+    "build:pubkeygen": "cd ./scripts/pubkeygen && ./build_pubkeygen.sh",
+    "build:groupsig": "cd ./scripts/groupsig && ./build_groupsig.sh",
+    "build:verify": "cd ./scripts/verify && ./build_verify.sh",
     "test": "NODE_OPTIONS=--max_old_space_size=56000 mocha -r ts-node/register 'test/**/*.ts'",
-    "groupsig": "npx ts-node scripts/groupsign.ts"
+    "groupsig-demo": "npx ts-node scripts/groupsign_cli.ts"
   },
   "repository": "git@github.com:0xPARC/circom-secp256k1.git",
   "author": "0xPARC <hello@0xparc.org>",
