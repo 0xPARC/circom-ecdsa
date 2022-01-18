@@ -22,9 +22,9 @@ We provide examples of three circuits using the ECDSA primitives implemented her
 - `groupsig`: Prove knowledge of a private key corresponding to one of three Ethereum addresses, and attest to a specific message.
 - `verify`: Prove that a ECDSA verification ran properly on a provided signature and message.
 
-Run `yarn build:pubkeygen`, `yarn build:groupsig`, `yarn build:verify` at the top level to compile the respective circuits and keys.
+Run `yarn build:pubkeygen`, `yarn build:groupsig`, `yarn build:verify` at the top level to compile each respective circuit and keys.
 
-Each of these will create a subdirectory inside a `build` directory (which will be created if it doesn't already exist). Inside this directory, the build process will create `r1cs` and `wasm` files for witness generation, as well as a `zkey` file (proving and verifying keys). Note that this process will take several minutes.
+Each of these will create a subdirectory inside a `build` directory at the top level (which will be created if it doesn't already exist). Inside this directory, the build process will create `r1cs` and `wasm` files for witness generation, as well as a `zkey` file (proving and verifying keys). Note that this process will take several minutes.
 
 This process will also generate and verify a proof for a dummy inputs in the respective `scripts/[circuit_name]` subdirectory, as a smoke test.
 
