@@ -27,7 +27,7 @@ echo "DONE ($((end-start))s)"
 echo "****GENERATING WITNESS FOR SAMPLE INPUT****"
 start=`date +%s`
 set -x
-node "$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js "$BUILD_DIR"/"$CIRCUIT_NAME"_js/"$CIRCUIT_NAME".wasm input_pubkeygen.json "$BUILD_DIR"/witness.wtns
+node "$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js "$BUILD_DIR"/"$CIRCUIT_NAME"_js/"$CIRCUIT_NAME".wasm input_verify.json "$BUILD_DIR"/witness.wtns
 { set +x; } 2>/dev/null
 end=`date +%s`
 echo "DONE ($((end-start))s)"
@@ -51,7 +51,7 @@ echo "DONE ($((end-start))s)"
 echo "****VERIFYING FINAL ZKEY****"
 start=`date +%s`
 set -x
-npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME".zkey
+NODE_OPTIONS=--max_old_space_size=56000 npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME".zkey
 { set +x; } 2>/dev/null
 end=`date +%s`
 echo "DONE ($((end-start))s)"

@@ -1,5 +1,5 @@
 {
-  "name": "circom-secp256k1",
+  "name": "circom-ecdsa",
   "version": "0.0.1",
   "description": "bigint arithmetic and secp256k1 ecc operations in circom",
   "main": "index.js",
@@ -10,7 +10,7 @@
     "test": "NODE_OPTIONS=--max_old_space_size=56000 mocha -r ts-node/register 'test/**/*.ts'",
     "groupsig-demo": "npx ts-node scripts/groupsign_cli.ts"
   },
-  "repository": "git@github.com:0xPARC/circom-secp256k1.git",
+  "repository": "git@github.com:0xPARC/circom-ecdsa.git",
   "author": "0xPARC <hello@0xparc.org>",
   "license": "ISC",
   "dependencies": {
