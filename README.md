@@ -48,7 +48,7 @@ All benchmarks were run on a 20-core 3.3GHz, 64G RAM machine.  Building `verify`
 
 Run `yarn test` at the top level to run tests. Note that these tests only test correctness of witness generation.  They do not check that circuits are properly constrained, i.e. that only valid witnesses satisfy the constraints.  This is a much harder problem that we're currently working on!
 
-Circuit unit tests are written in typescript, in the `test` directory using `chai`, `mocha`, and `circom_tester`.  Running all tests will take [INSERT HERE]. To run a subset of the tests, use `yarn test --grep [test_str]` to run all tests whose description matches `[test_str]`.
+Circuit unit tests are written in typescript, in the `test` directory using `chai`, `mocha`, and `circom_tester`.  Running all tests takes about 1 hour on our 3.3GHz, 64G RAM test machine. To run a subset of the tests, use `yarn test --grep [test_str]` to run all tests whose description matches `[test_str]`.
 
 ## Groupsig CLI Demo
 
