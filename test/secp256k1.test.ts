@@ -120,9 +120,6 @@ describe("Secp256k1PointOnCurve", function () {
         0n
     ]);
 
-    let p: bigint = 115792089237316195423570985008687907853269984665640564039457584007908834671663n;
-    let p_array: bigint[] = bigint_to_array(86, 3, exports.p);
-
     var test_secp256k1_poc_instance = function (test_case: [bigint, bigint, bigint]) {
         let x = test_case[0];
         let y = test_case[1];
