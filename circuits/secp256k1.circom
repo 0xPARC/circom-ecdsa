@@ -122,29 +122,29 @@ template Secp256k1Double(n, k) {
     var p[100] = get_secp256k1_prime(n, k);
 
     component in0_sq = BigMultModP(n, k);
-    for (var i = 0; i < k; i++) {    
+    for (var i = 0; i < k; i++) {
         in0_sq.a[i] <== in[0][i];
         in0_sq.b[i] <== in[0][i];
-	in0_sq.p[i] <== p[i];
+        in0_sq.p[i] <== p[i];
     }
 
     var long_2[100];
-    var long_3[100];    
+    var long_3[100];
     long_2[0] = 2;
-    long_3[0] = 3;    
+    long_3[0] = 3;
     for (var i = 1; i < k; i++) {
         long_2[i] = 0;
-        long_3[i] = 0;	
+        long_3[i] = 0;
     }
     var inv_2[100] = mod_inv(n, k, long_2, p);
     var long_3_div_2[100] = prod(n, k, long_3, inv_2);
     var long_3_div_2_mod_p[2][100] = long_div(n, k, long_3_div_2, p);
-    
+
     component numer = BigMultModP(n, k);
     for (var i = 0; i < k; i++) {
         numer.a[i] <== long_3_div_2_mod_p[1][i];
         numer.b[i] <== in0_sq.out[i];
-	numer.p[i] <== p[i];
+        numer.p[i] <== p[i];
     }
 
     signal lambda[k];
@@ -165,8 +165,8 @@ template Secp256k1Double(n, k) {
     component lambda_check = BigMultModP(n, k);
     for (var i = 0; i < k; i++) {
         lambda_range_checks[i] = Num2Bits(n);
-	lambda_range_checks[i].in <== lambda[i];
-	
+        lambda_range_checks[i].in <== lambda[i];
+
         lambda_check.a[i] <== in[1][i];
         lambda_check.b[i] <== lambda[i];
         lambda_check.p[i] <== p[i];
@@ -236,15 +236,15 @@ template Secp256k1ScalarMult(n, k) {
     component has_prev_non_zero[k * n];
     for (var i = k - 1; i >= 0; i--) {
         for (var j = n - 1; j >= 0; j--) {
-	    has_prev_non_zero[n * i + j] = OR();
-	    if (i == k - 1 && j == n - 1) {
-	        has_prev_non_zero[n * i + j].a <== 0;
-		has_prev_non_zero[n * i + j].b <== n2b[i].out[j];
+            has_prev_non_zero[n * i + j] = OR();
+            if (i == k - 1 && j == n - 1) {
+                has_prev_non_zero[n * i + j].a <== 0;
+                has_prev_non_zero[n * i + j].b <== n2b[i].out[j];
             } else {
-	        has_prev_non_zero[n * i + j].a <== has_prev_non_zero[n * i + j + 1].out;
-		has_prev_non_zero[n * i + j].b <== n2b[i].out[j];
+                has_prev_non_zero[n * i + j].a <== has_prev_non_zero[n * i + j + 1].out;
+                has_prev_non_zero[n * i + j].b <== n2b[i].out[j];
             }
-	}
+        }
     }
 
     signal partial[n * k][2][k];
@@ -253,41 +253,108 @@ template Secp256k1ScalarMult(n, k) {
     component doublers[n * k - 1];
     for (var i = k - 1; i >= 0; i--) {
         for (var j = n - 1; j >= 0; j--) {
-	    if (i == k - 1 && j == n - 1) {
-	        for (var idx = 0; idx < k; idx++) {
+            if (i == k - 1 && j == n - 1) {
+                for (var idx = 0; idx < k; idx++) {
                     partial[n * i + j][0][idx] <== point[0][idx];
                     partial[n * i + j][1][idx] <== point[1][idx];
-		}
-	    }
-	    if (i < k - 1 || j < n - 1) {
+                }
+            }
+            if (i < k - 1 || j < n - 1) {
                 adders[n * i + j] = Secp256k1AddUnequal(n, k);
                 doublers[n * i + j] = Secp256k1Double(n, k);
-		for (var idx = 0; idx < k; idx++) {
-		    doublers[n * i + j].in[0][idx] <== partial[n * i + j + 1][0][idx];
-		    doublers[n * i + j].in[1][idx] <== partial[n * i + j + 1][1][idx];
-		}
-		for (var idx = 0; idx < k; idx++) {
-		    adders[n * i + j].a[0][idx] <== doublers[n * i + j].out[0][idx];
-		    adders[n * i + j].a[1][idx] <== doublers[n * i + j].out[1][idx];
-		    adders[n * i + j].b[0][idx] <== point[0][idx];
-		    adders[n * i + j].b[1][idx] <== point[1][idx];
-		}
+                for (var idx = 0; idx < k; idx++) {
+                    doublers[n * i + j].in[0][idx] <== partial[n * i + j + 1][0][idx];
+                    doublers[n * i + j].in[1][idx] <== partial[n * i + j + 1][1][idx];
+                }
+                for (var idx = 0; idx < k; idx++) {
+                    adders[n * i + j].a[0][idx] <== doublers[n * i + j].out[0][idx];
+                    adders[n * i + j].a[1][idx] <== doublers[n * i + j].out[1][idx];
+                    adders[n * i + j].b[0][idx] <== point[0][idx];
+                    adders[n * i + j].b[1][idx] <== point[1][idx];
+                }
                 // partial[n * i + j]
-		// = has_prev_non_zero[n * i + j + 1] * ((1 - n2b[i].out[j]) * doublers[n * i + j] + n2b[i].out[j] * adders[n * i + j])
-		//   + (1 - has_prev_non_zero[n * i + j + 1]) * point
-		for (var idx = 0; idx < k; idx++) {
-		    intermed[n * i + j][0][idx] <== n2b[i].out[j] * (adders[n * i + j].out[0][idx] - doublers[n * i + j].out[0][idx]) + doublers[n * i + j].out[0][idx];
-		    intermed[n * i + j][1][idx] <== n2b[i].out[j] * (adders[n * i + j].out[1][idx] - doublers[n * i + j].out[1][idx]) + doublers[n * i + j].out[1][idx];
-		    partial[n * i + j][0][idx] <== has_prev_non_zero[n * i + j + 1].out * (intermed[n * i + j][0][idx] - point[0][idx]) + point[0][idx];
-		    partial[n * i + j][1][idx] <== has_prev_non_zero[n * i + j + 1].out * (intermed[n * i + j][1][idx] - point[1][idx]) + point[1][idx];
-		}
+                // = has_prev_non_zero[n * i + j + 1] * ((1 - n2b[i].out[j]) * doublers[n * i + j] + n2b[i].out[j] * adders[n * i + j])
+                //   + (1 - has_prev_non_zero[n * i + j + 1]) * point
+                for (var idx = 0; idx < k; idx++) {
+                    intermed[n * i + j][0][idx] <== n2b[i].out[j] * (adders[n * i + j].out[0][idx] - doublers[n * i + j].out[0][idx]) + doublers[n * i + j].out[0][idx];
+                    intermed[n * i + j][1][idx] <== n2b[i].out[j] * (adders[n * i + j].out[1][idx] - doublers[n * i + j].out[1][idx]) + doublers[n * i + j].out[1][idx];
+                    partial[n * i + j][0][idx] <== has_prev_non_zero[n * i + j + 1].out * (intermed[n * i + j][0][idx] - point[0][idx]) + point[0][idx];
+                    partial[n * i + j][1][idx] <== has_prev_non_zero[n * i + j + 1].out * (intermed[n * i + j][1][idx] - point[1][idx]) + point[1][idx];
+                }
             }
-	}
+        }
     }
 
     for (var idx = 0; idx < k; idx++) {
         out[0][idx] <== partial[0][0][idx];
         out[1][idx] <== partial[0][1][idx];
     }
+}
+
+// Implements:
+// out = (y^2 == x^3 + 7 (mod p))
+template Secp256k1PointOnCurve(n, k) {
+    signal input x[k];
+    signal input y[k];
+    signal output out;
+
+    var p[100] = get_secp256k1_prime(n, k);
+
+    // compute y^2 = y * y
+    component muly2 = BigMultModP(n, k);
+    for (var i = 0; i < k; i++) {
+        muly2.a[i] <== y[i];
+        muly2.b[i] <== y[i];
+        muly2.p[i] <== p[i];
+    }
+
+    // compute x^2 = x * x
+    component mulx2 = BigMultModP(n, k);
+    for (var i = 0; i < k; i++) {
+        mulx2.a[i] <== x[i];
+        mulx2.b[i] <== x[i];
+        mulx2.p[i] <== p[i];
+    }
+
+    // compute x^3 = x^2 * x
+    component mulx3 = BigMultModP(n, k);
+    for (var i = 0; i < k; i++) {
+        mulx3.a[i] <== mulx2.out[i];
+        mulx3.b[i] <== x[i];
+        mulx3.p[i] <== p[i];
+    }
+
+    // compute diff = y^2 - x^3
+    component diff = BigSubModP(n, k);
+    for (var i = 0; i < k; i++) {
+        diff.a[i] <== muly2.out[i];
+        diff.b[i] <== mulx3.out[i];
+        diff.p[i] <== p[i];
+    }
+
+    // check diff == 7
+    component compare[k];
+    signal num_equal[k - 1];
+    for (var i = 0; i < k; i++) {
+        compare[i] = IsEqual();
+        if (i == 0) {
+            compare[i].in[0] <== 7;
+        }
+        else {
+            compare[i].in[0] <== 0;
+        }
+        compare[i].in[1] <== diff.out[i];
+
+        if (i == 1) {
+            num_equal[i - 1] <== compare[0].out + compare[1].out;
+        }
+        else if (i > 1) {
+            num_equal[i - 1] <== num_equal[i - 2] + compare[i].out;
+        }
+    }
+    component compare_total = IsEqual();
+    compare_total.in[0] <== k;
+    compare_total.in[1] <== num_equal[k - 2];
+    out <== compare_total.out;
 }
 

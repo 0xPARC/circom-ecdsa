@@ -31,7 +31,7 @@ describe("Secp256k1AddUnequal", function () {
     // runs circom compilation
     let circuit: any;
     before(async function () {
-        circuit = await wasm_tester(path.join(__dirname, "circuits", "test_secp256k1.circom"));
+        circuit = await wasm_tester(path.join(__dirname, "circuits", "test_secp256k1_add.circom"));
     });
 
     // pub0x, pub0y, pub1x, pub0y, sumx, sumy
@@ -86,4 +86,53 @@ describe("Secp256k1AddUnequal", function () {
     }
 
     test_cases.forEach(test_secp256k1_add_instance);
+});
+
+describe("Secp256k1PointOnCurve", function () {
+    this.timeout(1000 * 1000);
+
+    // runs circom compilation
+    let circuit: any;
+    before(async function () {
+        circuit = await wasm_tester(path.join(__dirname, "circuits", "test_secp256k1_poc.circom"));
+    });
+
+    // x, y, on/off
+    var test_cases: Array<[bigint, bigint, bigint]> = [];
+
+    // (0, 0) not on curve
+    test_cases.push([0n, 0n, 0n]);
+
+    // (1, 1) not on curve
+    test_cases.push([1n, 1n, 0n]);
+
+    // base point G on curve
+    test_cases.push([
+        55066263022277343669578718895168534326250603453777594175500187360389116729240n,
+        32670510020758816978083085130507043184471273380659243275938904335757337482424n,
+        1n
+    ]);
+
+    let p: bigint = 115792089237316195423570985008687907853269984665640564039457584007908834671663n;
+    let p_array: bigint[] = bigint_to_array(86, 3, exports.p);
+
+    var test_secp256k1_poc_instance = function (test_case: [bigint, bigint, bigint]) {
+        let x = test_case[0];
+        let y = test_case[1];
+        let r = test_case[2];
+
+        var x_array: bigint[] = bigint_to_array(86, 3, x);
+        var y_array: bigint[] = bigint_to_array(86, 3, y);
+
+        it('Testing x: ' + x + ' y: ' + y + " r: " + r,
+                async function() {
+                    let witness = await circuit.calculateWitness({
+                        "x": x_array, "y": y_array,
+                    });
+                    expect(witness[1]).to.equal(r);
+                    await circuit.checkConstraints(witness);
+                });
+    }
+
+    test_cases.forEach(test_secp256k1_poc_instance);
 });

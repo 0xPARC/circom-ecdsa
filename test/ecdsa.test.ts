@@ -45,9 +45,9 @@ function get_strided_bigint(stride: bigint, small_stride: bigint, x: bigint) {
     var exp: bigint = 0n;
     while (x > 0) {
         var mod: bigint = x % (2n ** small_stride);
-	ret = ret + mod * (2n ** (stride * exp));
-	x = x / (2n ** small_stride);
-	exp = exp + 1n;
+        ret = ret + mod * (2n ** (stride * exp));
+        x = x / (2n ** small_stride);
+        exp = exp + 1n;
     }
     return ret;
 }
@@ -79,15 +79,15 @@ describe("ECDSAPrivToPub", function () {
     // 4 randomly generated privkeys
     var privkeys: Array<bigint> = [88549154299169935420064281163296845505587953610183896504176354567359434168161n,
                                    37706893564732085918706190942542566344879680306879183356840008504374628845468n,
-				   90388020393783788847120091912026443124559466591761394939671630294477859800601n,
-				   110977009687373213104962226057480551605828725303063265716157300460694423838923n];
+                                   90388020393783788847120091912026443124559466591761394939671630294477859800601n,
+                                   110977009687373213104962226057480551605828725303063265716157300460694423838923n];
 
 
     for (var cnt = 1n; cnt < 2n ** 7n; cnt++) {
         var privkey: bigint = get_strided_bigint(10n, 1n, cnt);
         privkeys.push(privkey);
     }
-    
+
     for (var idx = 0; idx < privkeys.length; idx++) {
         var pubkey: Point = Point.fromPrivateKey(privkeys[idx]);
         test_cases.push([privkeys[idx], pubkey.x, pubkey.y]);
@@ -122,7 +122,7 @@ function bigint_to_Uint8Array(x: bigint) {
     var ret: Uint8Array = new Uint8Array(32);
     for (var idx = 31; idx >= 0; idx--) {
         ret[idx] = Number(x % 256n);
-	x = x / 256n;
+        x = x / 256n;
     }
     return ret;
 }
@@ -132,7 +132,7 @@ function Uint8Array_to_bigint(x: Uint8Array) {
     var ret: bigint = 0n;
     for (var idx = 0; idx < x.length; idx++) {
         ret = ret * 256n;
-	ret = ret + BigInt(x[idx]);
+        ret = ret + BigInt(x[idx]);
     }
     return ret;
 }
@@ -149,7 +149,7 @@ describe("ECDSAVerify", function () {
     for (var idx = 0; idx < privkeys.length; idx++) {
         var pubkey: Point = Point.fromPrivateKey(privkeys[idx]);
         var msghash_bigint: bigint = 1234n;
-	    test_cases.push([privkeys[idx], msghash_bigint, pubkey.x, pubkey.y]);
+            test_cases.push([privkeys[idx], msghash_bigint, pubkey.x, pubkey.y]);
     }
 
     let circuit: any;
@@ -159,7 +159,7 @@ describe("ECDSAVerify", function () {
 
     var test_ecdsa_verify = function (test_case: [bigint, bigint, bigint, bigint]) {
         let privkey = test_case[0];
-	let msghash_bigint = test_case[1];
+        let msghash_bigint = test_case[1];
         let pub0 = test_case[2];
         let pub1 = test_case[3];
 
@@ -171,7 +171,7 @@ describe("ECDSAVerify", function () {
             var r: Uint8Array = sig.slice(0, 32);
             var r_bigint: bigint = Uint8Array_to_bigint(r);
             var s: Uint8Array = sig.slice(32, 64);
-            var s_bigint:bigint = Uint8Array_to_bigint(s);	
+            var s_bigint:bigint = Uint8Array_to_bigint(s);
 
             var priv_array: bigint[] = bigint_to_array(86, 3, privkey);
             var r_array: bigint[] = bigint_to_array(86, 3, r_bigint);
@@ -179,16 +179,16 @@ describe("ECDSAVerify", function () {
             var msghash_array: bigint[] = bigint_to_array(86, 3, msghash_bigint);
             var pub0_array: bigint[] = bigint_to_array(86, 3, pub0);
             var pub1_array: bigint[] = bigint_to_array(86, 3, pub1);
-	    var res = 1n;
+            var res = 1n;
 
             console.log('r', r_bigint);
-            console.log('s', s_bigint);	
+            console.log('s', s_bigint);
             let witness = await circuit.calculateWitness({"r": r_array,
-	                                                  "s": s_array,
-							  "msghash": msghash_array,
-							  "pubkey": [pub0_array, pub1_array]});
+                                                          "s": s_array,
+                                                          "msghash": msghash_array,
+                                                          "pubkey": [pub0_array, pub1_array]});
             expect(witness[1]).to.equal(res);
-            await circuit.checkConstraints(witness);	    
+            await circuit.checkConstraints(witness);
         });
 
         it('Testing incorrect sig: privkey: ' + privkey + ' msghash: ' + msghash_bigint + ' pub0: ' + pub0 + ' pub1: ' + pub1, async function() {
@@ -197,7 +197,7 @@ describe("ECDSAVerify", function () {
             var r: Uint8Array = sig.slice(0, 32);
             var r_bigint: bigint = Uint8Array_to_bigint(r);
             var s: Uint8Array = sig.slice(32, 64);
-            var s_bigint:bigint = Uint8Array_to_bigint(s);	
+            var s_bigint:bigint = Uint8Array_to_bigint(s);
 
             var priv_array: bigint[] = bigint_to_array(86, 3, privkey);
             var r_array: bigint[] = bigint_to_array(86, 3, r_bigint + 1n);
@@ -205,16 +205,16 @@ describe("ECDSAVerify", function () {
             var msghash_array: bigint[] = bigint_to_array(86, 3, msghash_bigint);
             var pub0_array: bigint[] = bigint_to_array(86, 3, pub0);
             var pub1_array: bigint[] = bigint_to_array(86, 3, pub1);
-	    var res = 0n;
-	    
+            var res = 0n;
+
             console.log('r', r_bigint + 1n);
-            console.log('s', s_bigint);	
+            console.log('s', s_bigint);
             let witness = await circuit.calculateWitness({"r": r_array,
-	                                                  "s": s_array,
-							  "msghash": msghash_array,
-							  "pubkey": [pub0_array, pub1_array]});
+                                                          "s": s_array,
+                                                          "msghash": msghash_array,
+                                                          "pubkey": [pub0_array, pub1_array]});
             expect(witness[1]).to.equal(res);
-            await circuit.checkConstraints(witness);	    
+            await circuit.checkConstraints(witness);
         });
     }
 
