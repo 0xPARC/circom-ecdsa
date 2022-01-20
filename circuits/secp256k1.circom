@@ -324,18 +324,26 @@ template Secp256k1PointOnCurve(n, k) {
         mulx3.p[i] <== p[i];
     }
 
-    // check y^2 == x^3 + 7
+    // compute diff = y^2 - x^3
+    component diff = BigSubModP(n, k);
+    for (var i = 0; i < k; i++) {
+        diff.a[i] <== muly2.out[i];
+        diff.b[i] <== mulx3.out[i];
+        diff.p[i] <== p[i];
+    }
+
+    // check diff == 7
     component compare[k];
     signal num_equal[k - 1];
     for (var i = 0; i < k; i++) {
         compare[i] = IsEqual();
         if (i == 0) {
-            compare[i].in[0] <== mulx3.out[i] + 7;
+            compare[i].in[0] <== 7;
         }
         else {
-            compare[i].in[0] <== mulx3.out[i];
+            compare[i].in[0] <== 0;
         }
-        compare[i].in[1] <== muly2.out[i];
+        compare[i].in[1] <== diff.out[i];
 
         if (i == 1) {
             num_equal[i - 1] <== compare[0].out + compare[1].out;
