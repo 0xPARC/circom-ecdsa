@@ -130,7 +130,8 @@ template ECDSAPrivToPub(n, k) {
 // r, s, msghash, and pubkey have coordinates
 // encoded with k registers of n bits each
 // signature is (r, s)
-template ECDSAVerify(n, k) {
+// Does not check that pubkey is valid
+template ECDSAVerifyNoPubkeyCheck(n, k) {
     assert(k >= 2);
     assert(k <= 100);
 
@@ -144,6 +145,7 @@ template ECDSAVerify(n, k) {
     var p[100] = get_secp256k1_prime(n, k);
     var order[100] = get_secp256k1_order(n, k);
 
+    // compute multiplicative inverse of s mod n
     var sinv_comp[100] = mod_inv(n, k, s, order);
     signal sinv[k];
     component sinv_range_checks[k];

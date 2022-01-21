@@ -20,7 +20,7 @@ Circuits can be found in `circuits`. `scripts` contains various utility scripts 
 We provide examples of three circuits using the ECDSA primitives implemented here:
 - `pubkeygen`: Prove knowledge of a private key corresponding to an Ethereum address.
 - `groupsig`: Prove knowledge of a private key corresponding to one of three Ethereum addresses, and attest to a specific message.
-- `verify`: Prove that a ECDSA verification ran properly on a provided signature and message.
+- `verify`: Prove that a ECDSA verification ran properly on a provided signature and message. Note that this circuit does not verify that the public key itself is valid. This must be done separately by the user.
 
 Run `yarn build:pubkeygen`, `yarn build:groupsig`, `yarn build:verify` at the top level to compile each respective circuit and keys.
 

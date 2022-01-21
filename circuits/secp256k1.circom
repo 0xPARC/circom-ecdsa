@@ -355,6 +355,7 @@ template Secp256k1PointOnCurve(n, k) {
     component compare_total = IsEqual();
     compare_total.in[0] <== k;
     compare_total.in[1] <== num_equal[k - 2];
+
     out <== compare_total.out;
 }
 

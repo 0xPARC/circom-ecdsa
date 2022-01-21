@@ -137,7 +137,7 @@ function Uint8Array_to_bigint(x: Uint8Array) {
     return ret;
 }
 
-describe("ECDSAVerify", function () {
+describe("ECDSAVerifyNoPubkeyCheck", function () {
     this.timeout(1000 * 1000);
 
     // privkey, msghash, pub0, pub1
