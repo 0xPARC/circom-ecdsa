@@ -35,7 +35,7 @@ All benchmarks were run on a 20-core 3.3GHz, 64G RAM machine.  Building `verify`
 
 ||pubkeygen|eth_addr|groupsig|verify|
 |---|---|---|---|---|
-|Constraints                          |416883 |5688823 |571721 |9480361 |
+|Constraints                          |416883 |568823 |571721 |9480361 |
 |Circuit compilation  	      	      |90s    |115s    |116s   |324s    |
 |Witness generation  	      	      |8s     |7s      |8s     |150s    |
 |Trusted setup phase 2 key generation |150s   |167s    |164s   |5569s   |
