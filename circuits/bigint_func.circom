@@ -85,16 +85,7 @@ function long_scalar_mult(n, k, a, b) {
 // implements algorithm of https://people.eecs.berkeley.edu/~fateman/282/F%20Wright%20notes/week4.pdf
 // b[k-1] must be nonzero!
 function long_div(n, k, a, b) {
-    //log(1111111111111111111111);
     var out[2][100];
-    //log(n);
-    //log(k);
-    for (var i = 0; i < 2 * k; i++) {
-        //log(a[i]);
-    }
-    for (var i = 0; i < k; i++) {
-        //log(b[i]);
-    }
 
     var remainder[200];
     for (var i = 0; i < 2 * k; i++) {
@@ -115,9 +106,7 @@ function long_div(n, k, a, b) {
             }
         }
 
-        //log(i);
         out[0][i] = short_div(n, k, dividend, b);
-        //log(out[0][i]);
 
         var mult_shift[100] = long_scalar_mult(n, k, out[0][i], b);
         var subtrahend[200];
@@ -136,12 +125,6 @@ function long_div(n, k, a, b) {
     }
     out[1][k] = 0;
 
-    for (var i = 0; i <= k; i++) {
-        //log(out[0][i]);
-    }
-    for (var i = 0; i < k; i++) {
-        //log(out[1][i]);
-    }
     return out;
 }
 
@@ -155,14 +138,6 @@ function short_div_norm(n, k, a, b) {
    if (qhat > (1 << n) - 1) {
       qhat = (1 << n) - 1;
    }
-   //log(k);
-   for (var i = 0; i <= k; i++) {
-       //log(a[i]);
-   }
-   for (var i = 0; i < k; i++) {
-       //log(b[i]);
-   }
-   //log(qhat);
 
    var mult[100] = long_scalar_mult(n, k, qhat, b);
    if (long_gt(n, k + 1, mult, a) == 1) {
@@ -184,7 +159,7 @@ function short_div_norm(n, k, a, b) {
 // 0 <= a < (2**n) * b
 function short_div(n, k, a, b) {
    var scale = (1 << n) \ (1 + b[k - 1]);
-   //log(scale);
+
    // k + 2 registers now
    var norm_a[200] = long_scalar_mult(n, k + 1, scale, a);
    // k + 1 registers now

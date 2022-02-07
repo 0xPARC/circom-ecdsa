@@ -333,13 +333,6 @@ template BigLessThan(n, k){
      out <== ors[0].out;
 }
 
-function vlog(verbose, x) {
-    if (verbose == 1) {
-        log(x);
-    }
-    return x;
-}
-
 // leading register of b should be non-zero
 template BigMod(n, k) {
     assert(n <= 126);
@@ -369,10 +362,6 @@ template BigMod(n, k) {
     mul.a[k] <== div[k];
     mul.b[k] <== 0;
 
-    for (var i = 0; i < 2 * k + 2; i++) {
-        //log(mul.out[i]);
-    }
-
     component add = BigAdd(n, 2 * k + 2);
     for (var i = 0; i < 2 * k; i++) {
         add.a[i] <== mul.out[i];
@@ -386,10 +375,6 @@ template BigMod(n, k) {
     add.a[2 * k + 1] <== mul.out[2 * k + 1];
     add.b[2 * k] <== 0;
     add.b[2 * k + 1] <== 0;
-
-    for (var i = 0; i < 2 * k + 2; i++) {
-        //log(add.out[i]);
-    }
 
     for (var i = 0; i < 2 * k; i++) {
         add.out[i] === a[i];
