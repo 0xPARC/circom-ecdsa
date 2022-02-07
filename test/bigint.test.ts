@@ -148,6 +148,81 @@ describe("BigSubModP n = 3, k = 2, p in {7, 37} exhaustive", function() {
     test_cases.forEach(test_bigsubmodp_32);
 });
 
+describe("BigMult n = 2, k = 1 exhaustive", function() {
+    this.timeout(1000 * 1000);
+
+    // runs circom compilation
+    let circuit: any;
+    before(async function () {
+        circuit = await wasm_tester(path.join(__dirname, "circuits", "test_bigmult_21.circom"));
+    });
+
+    // a, b, div, mod
+    var test_cases: Array<[bigint, bigint, bigint]> = [];
+    for (var a = 0n; a < 4; a++) {
+        for (var b = 0n; b < 4; b++) {
+            var product = a * b;
+            test_cases.push([a, b, product]);
+        }
+    }
+
+    var test_bigmult_21 = function (x: [bigint, bigint, bigint]) {
+        const [a, b, product] = x;
+
+        var a_array: bigint[] = bigint_to_array(2, 1, a);
+        var b_array: bigint[] = bigint_to_array(2, 1, b);
+        var product_array: bigint[] = bigint_to_array(2, 2, product);
+
+        it('Testing a: ' + a + ' b: ' + b, async function() {
+            let witness = await circuit.calculateWitness({"a": a_array, "b": b_array});
+            expect(witness[1]).to.equal(product_array[0]);
+            expect(witness[2]).to.equal(product_array[1]);
+            await circuit.checkConstraints(witness);
+        });
+    }
+
+    test_cases.forEach(test_bigmult_21);
+});
+
+describe("BigMult n = 2, k = 2 exhaustive", function() {
+    this.timeout(1000 * 1000);
+
+    // runs circom compilation
+    let circuit: any;
+    before(async function () {
+        circuit = await wasm_tester(path.join(__dirname, "circuits", "test_bigmult_22.circom"));
+    });
+
+    // a, b, div, mod
+    var test_cases: Array<[bigint, bigint, bigint]> = [];
+    for (var a = 0n; a < 4 * 4; a++) {
+        for (var b = 0n; b < 4 * 4; b++) {
+            var product = a * b;
+            test_cases.push([a, b, product]);
+        }
+    }
+
+    var test_bigmult_22 = function (x: [bigint, bigint, bigint]) {
+        const [a, b, product] = x;
+
+        var a_array: bigint[] = bigint_to_array(2, 2, a);
+        var b_array: bigint[] = bigint_to_array(2, 2, b);
+        var product_array: bigint[] = bigint_to_array(2, 4, product);
+
+        it('Testing a: ' + a + ' b: ' + b, async function() {
+            let witness = await circuit.calculateWitness({"a": a_array, "b": b_array});
+            expect(witness[1]).to.equal(product_array[0]);
+            expect(witness[2]).to.equal(product_array[1]);
+            expect(witness[3]).to.equal(product_array[2]);
+            expect(witness[4]).to.equal(product_array[3]);
+            await circuit.checkConstraints(witness);
+        });
+    }
+
+    test_cases.forEach(test_bigmult_22);
+});
+
+
 describe("BigMult n = 2, k = 3 exhaustive", function() {
     this.timeout(1000 * 1000);
 

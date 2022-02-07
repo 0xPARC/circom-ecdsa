@@ -231,10 +231,16 @@ template LongToShortNoEndCarry(n, k) {
     var carry[k];
     carry[0] = 0;
     out[0] <-- split[0][0];
+    if (k == 1) {
+	out[1] <-- split[0][1];
+    }
     if (k > 1) {
         var sumAndCarry[2] = SplitFn(split[0][1] + split[1][0], n, n);
         out[1] <-- sumAndCarry[0];
         carry[1] = sumAndCarry[1];
+    }
+    if (k == 2) {
+	out[2] <-- split[1][1] + split[0][2] + carry[1];
     }
     if (k > 2) {
         for (var i = 2; i < k; i++) {
