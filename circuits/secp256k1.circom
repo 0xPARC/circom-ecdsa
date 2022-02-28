@@ -1,6 +1,7 @@
 pragma circom 2.0.2;
 
 include "../node_modules/circomlib/circuits/bitify.circom";
+include "../node_modules/circomlib/circuits/multiplexer.circom";
 
 include "bigint.circom";
 include "bigint_func.circom";
@@ -290,6 +291,166 @@ template Secp256k1ScalarMult(n, k) {
         out[1][idx] <== partial[0][1][idx];
     }
 }
+
+template Secp256k1ScalarMultWindow(n, k, stride) {
+    signal input scalar[k];
+    signal input point[2][k];
+
+    signal output out[2][k];
+
+    var BITS = n * k;
+    var num_strides = BITS \ stride;
+    if (BITS % stride > 0) {
+	num_strides = num_strides + 1;
+    } 
+    
+    // compute dynamic window of: 2 * point, 3 * point, .. (2 ** stride - 1) * point
+    signal cache[(1 << stride) - 2][2][k];
+    component cache_doublers[(1 << (stride - 1)) - 1];
+    component cache_adders[(1 << (stride - 1)) - 1];
+    var cd_cnt = 0;
+    var ca_cnt = 0;
+    for (var i = 1; i < stride; i++) {
+	for (var j = (1 << i) \ 2; j < (1 << i); j++) {
+	    cache_doublers[cd_cnt] = Secp256k1Double(n, k);
+	    cache_adders[ca_cnt] = Secp256k1AddUnequal(n, k);
+
+	    for (var idx = 0; idx < k; idx++) {
+		if (j > 1) {
+		    cache_doublers[cd_cnt].in[0][idx] <== cache[j - 2][0][idx];
+		    cache_doublers[cd_cnt].in[1][idx] <== cache[j - 2][1][idx];
+		} else {
+		    cache_doublers[cd_cnt].in[0][idx] <== point[0][idx];
+		    cache_doublers[cd_cnt].in[1][idx] <== point[1][idx];
+		}
+	    }
+	    for (var idx = 0; idx < k; idx++) {
+		cache[2 * j - 2][0][idx] <== cache_doublers[cd_cnt].out[0][idx];
+		cache[2 * j - 2][1][idx] <== cache_doublers[cd_cnt].out[1][idx];
+	    }
+
+	    for (var idx = 0; idx < k; idx++) {
+		cache_adders[ca_cnt].a[0][idx] <== cache[2 * j - 2][0][idx];
+		cache_adders[ca_cnt].a[1][idx] <== cache[2 * j - 2][1][idx];
+		cache_adders[ca_cnt].b[0][idx] <== point[0][idx];
+		cache_adders[ca_cnt].b[1][idx] <== point[1][idx];
+	    }
+	    for (var idx = 0; idx < k; idx++) {
+		cache[2 * j + 1 - 2][0][idx] <== cache_adders[ca_cnt].out[0][idx];
+		cache[2 * j + 1 - 2][1][idx] <== cache_adders[ca_cnt].out[1][idx];
+	    }
+	    
+	    cd_cnt = cd_cnt + 1;
+	    ca_cnt = ca_cnt + 1;
+	}
+    }
+
+    component n2b[k];
+    for (var i = 0; i < k; i++) {
+        n2b[i] = Num2Bits(n);
+        n2b[i].in <== scalar[i];
+    }
+    
+    // selector[i] contains a value in [0, ..., 2**stride - 1]
+    component selectors[num_strides];
+    for (var i = 0; i < num_strides; i++) {
+        selectors[i] = Bits2Num(stride);
+        for (var j = 0; j < stride; j++) {
+            var bit_idx1 = (i * stride + j) \ n;
+            var bit_idx2 = (i * stride + j) % n;
+            if (bit_idx1 < k) {
+                selectors[i].in[j] <== n2b[bit_idx1].out[bit_idx2];
+            } else {
+                selectors[i].in[j] <== 0;
+            }
+        }
+    }
+
+    // select from 2 concatenated k-register outputs using a 2 ** stride bit selector
+    component multiplexers[num_strides];
+    for (var i = 0; i < num_strides; i++) {
+	multiplexers[i] = Multiplexer(2 * k, (1 << stride));
+        multiplexers[i].sel <== selectors[i].out;
+        for (var l = 0; l < 2; l++) {
+            for (var idx = 0; idx < k; idx++) {
+                multiplexers[i].inp[0][l * k + idx] <== point[l][idx];
+		multiplexers[i].inp[1][l * k + idx] <== point[l][idx];
+                for (var j = 2; j < (1 << stride); j++) {
+                    multiplexers[i].inp[j][l * k + idx] <== cache[j - 2][l][idx];
+                }
+            }
+        }
+    }
+
+    component is_zero[num_strides];
+    for (var i = 0; i < num_strides; i++) {
+        is_zero[i] = IsZero();
+        is_zero[i].in <== selectors[i].out;
+    }
+
+    // has_prev_nonzero[i] = 1 if at least one of the selections in privkey in strides i+1, i+2, .. is non-zero
+    component has_prev_nonzero[num_strides - 1];
+    for (var i = num_strides - 2; i >= 0; i--) {
+        has_prev_nonzero[i] = OR();
+	if (i == num_strides - 2) {
+            has_prev_nonzero[i].a <== 0;
+	} else {
+	    has_prev_nonzero[i].a <== has_prev_nonzero[i + 1].out;
+	}
+        has_prev_nonzero[i].b <== 1 - is_zero[i + 1].out;
+    }
+        
+    signal partial[num_strides][2][k];
+    signal intermed[num_strides - 1][2][k];
+    component adders[num_strides - 1];
+    component doublers[(num_strides - 1) * stride];
+    for (var i = num_strides - 1; i >= 0; i--) {
+	if (i == num_strides - 1) {
+	    for (var idx = 0; idx < k; idx++) {
+		partial[i][0][idx] <== multiplexers[i].out[idx];
+		partial[i][1][idx] <== multiplexers[i].out[k + idx];
+	    }
+	} else {
+	    for (var j = 0; j < stride; j++) {
+		doublers[i * stride + j] = Secp256k1Double(n, k);
+		if (j == 0) {
+		    for (var idx = 0; idx < k; idx++) {
+			doublers[i * stride].in[0][idx] <== partial[i + 1][0][idx];
+			doublers[i * stride].in[1][idx] <== partial[i + 1][1][idx];
+		    }
+		} else {
+		    for (var idx = 0; idx < k; idx++) {
+			doublers[i * stride + j].in[0][idx] <== doublers[i * stride + j - 1].out[0][idx];
+			doublers[i * stride + j].in[1][idx] <== doublers[i * stride + j - 1].out[1][idx];
+		    }
+		}
+	    }
+
+	    adders[i] = Secp256k1AddUnequal(n, k);	    
+	    for (var idx = 0; idx < k; idx++) {
+		adders[i].a[0][idx] <== doublers[i * stride + stride - 1].out[0][idx];
+		adders[i].a[1][idx] <== doublers[i * stride + stride - 1].out[1][idx];
+		adders[i].b[0][idx] <== multiplexers[i].out[idx];
+		adders[i].b[1][idx] <== multiplexers[i].out[k + idx];
+	    }
+
+	    // partial[i] = has_prev_nonzero[i] * (is_zero[i] * doublers[i * stride + stride - 1] + (1 - is_zero[i]) * adders[i])
+            //              + (1 - has_prev_nonzero[i]) * multiplexers[i]
+	    for (var idx = 0; idx < k; idx++) {
+		intermed[i][0][idx] <== is_zero[i].out * (doublers[i * stride + stride - 1].out[0][idx] - adders[i].out[0][idx]) + adders[i].out[0][idx];
+		intermed[i][1][idx] <== is_zero[i].out * (doublers[i * stride + stride - 1].out[1][idx] - adders[i].out[1][idx]) + adders[i].out[1][idx];
+		partial[i][0][idx] <== has_prev_nonzero[i].out * (intermed[i][0][idx] - multiplexers[i].out[idx]) + multiplexers[i].out[idx];
+		partial[i][1][idx] <== has_prev_nonzero[i].out * (intermed[i][1][idx] - multiplexers[i].out[k + idx]) + multiplexers[i].out[k + idx];
+	    }
+	}
+    }
+
+    for (var idx = 0; idx < k; idx++) {
+        out[0][idx] <== partial[0][0][idx];
+        out[1][idx] <== partial[0][1][idx];
+    }
+}
+
 
 // Implements:
 // out = (y^2 == x^3 + 7 (mod p))
