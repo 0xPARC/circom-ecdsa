@@ -84,21 +84,21 @@ function long_scalar_mult(n, k, a, b) {
 // out[1] has length k -- remainder
 // implements algorithm of https://people.eecs.berkeley.edu/~fateman/282/F%20Wright%20notes/week4.pdf
 // b[k-1] must be nonzero!
-function long_div(n, k, a, b) {
+function long_div2(n, k, m, a, b){
     var out[2][100];
 
     var remainder[200];
-    for (var i = 0; i < 2 * k; i++) {
+    for (var i = 0; i < m + k; i++) {
         remainder[i] = a[i];
     }
 
     var mult[200];
     var dividend[200];
-    for (var i = k; i >= 0; i--) {
-        if (i == k) {
+    for (var i = m; i >= 0; i--) {
+        if (i == m) {
             dividend[k] = 0;
             for (var j = k - 1; j >= 0; j--) {
-                dividend[j] = remainder[j + k];
+                dividend[j] = remainder[j + m];
             }
         } else {
             for (var j = k; j >= 0; j--) {
@@ -110,22 +110,25 @@ function long_div(n, k, a, b) {
 
         var mult_shift[100] = long_scalar_mult(n, k, out[0][i], b);
         var subtrahend[200];
-        for (var j = 0; j < 2 * k; j++) {
+        for (var j = 0; j < m + k; j++) {
             subtrahend[j] = 0;
         }
         for (var j = 0; j <= k; j++) {
-            if (i + j < 2 * k) {
+            if (i + j < m + k) {
                subtrahend[i + j] = mult_shift[j];
             }
         }
-        remainder = long_sub(n, 2 * k, remainder, subtrahend);
+        remainder = long_sub(n, m + k, remainder, subtrahend);
     }
     for (var i = 0; i < k; i++) {
         out[1][i] = remainder[i];
     }
     out[1][k] = 0;
-
     return out;
+}
+
+function long_div(n, k, a, b) {
+    return long_div2(n, k, k, a, b);
 }
 
 // n bits per register
