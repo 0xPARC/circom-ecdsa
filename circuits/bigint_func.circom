@@ -312,3 +312,33 @@ function mod_inv(n, k, a, p) {
     out = mod_exp(n, k, a, pCopy, pMinusTwo);
     return out;
 }
+
+// a, b and out are all n bits k registers
+function long_sub_mod_p(n, k, a, b, p){
+    var gt = long_gt(n, k, a, b);
+    var tmp[100];
+    if(gt){
+        tmp = long_sub(n, k, a, b);
+    }
+    else{
+        tmp = long_sub(n, k, b, a);
+    }
+    var out[2][100];
+    for(var i = k;i < 2 * k; i++){
+        tmp[i] = 0;
+    }
+    out = long_div(n, k, tmp, p);
+    if(gt==0){
+        tmp = long_sub(n, k, p, out[1]);
+    }
+    return tmp;
+}
+
+// a, b, p and out are all n bits k registers
+function prod_mod_p(n, k, a, b, p){
+    var tmp[100];
+    var result[2][100];
+    tmp = prod(n, k, a, b);
+    result = long_div(n, k, tmp, p);
+    return result[1];
+}
