@@ -58,7 +58,6 @@ function get_secp256k1_order(n, k) {
 // out[0] = lamb ** 2 - a[0] - b[0] % p
 // out[1] = lamb * (a[0] - out[0]) - a[1] % p
 function secp256k1_addunequal_func(n, k, x1, y1, x2, y2){
-
     var a[2][100];
     var b[2][100];
 
@@ -79,32 +78,76 @@ function secp256k1_addunequal_func(n, k, x1, y1, x2, y2){
     // b[0] - a[0]
     var sub0_out[100]= long_sub_mod_p(n, k, b[0], a[0], p);
 
-    var lambda[100];
+    // lambda = (b[1] - a[1]) * inv(b[0] - a[0])
     var sub0inv[100] = mod_inv(n, k, sub0_out, p);
-    var sub1_sub0inv[100] = prod(n, k, sub1_out, sub0inv);
-    var lamb_arr[2][100] = long_div(n, k, sub1_sub0inv, p);
-    for (var i = 0; i < k; i++) {
-        lambda[i] = lamb_arr[1][i];
-    }
+    var lambda[100] = prod_mod_p(n, k, sub1_out, sub0inv, p);
 
+    // out[0] = lambda ** 2 - a[0] - b[0]
     var lambdasq_out[100] = prod_mod_p(n, k, lambda, lambda, p);
-
     var out0_pre_out[100] = long_sub_mod_p(n, k, lambdasq_out, a[0], p);
-
-    var out0_out[100] = long_sub_mod_p(n, k, out0_pre_out, b[0], p);
-
+    var out0_out[100] = long_sub_mod_p(n, k, out0_pre_out, b[0], p);\
     for (var i = 0; i < k; i++) {
         out[0][i] = out0_out[i];
     }
 
+    // out[1] = lambda * (a[0] - out[0]) - a[1]
     var out1_0_out[100] = long_sub_mod_p(n, k, a[0], out[0], p);
-
     var out1_1_out[100] = prod_mod_p(n, k, lambda, out1_0_out, p);
-
     var out1_out[100] = long_sub_mod_p(n, k, out1_1_out, a[1], p);
-
     for (var i = 0; i < k; i++) {
         out[1][i] = out1_out[i];
     }
+
+    return out;
+}
+
+// a[0], a[1] = x1, y1
+// lamb = (3 * a[0] ** 2) / (2 * a[1]) % p
+// out[0] = lamb ** 2 - (2 * a[0]) % p
+// out[1] = lamb * (a[0] - out[0]) - a[1] % p
+function secp256k1_double_func(n, k, x1, y1, x2, y2){
+    var a[2][100];
+    var b[2][100];
+
+    for(var i = 0; i < k; i++){
+        a[0][i] = x1[i];
+        a[1][i] = y1[i];
+    }
+
+    var out[2][100];
+
+    var p[100] = get_secp256k1_prime(n, k);
+
+    // lamb_numer = 3 * a[0] ** 2
+    var x1_sq[100] = prod_mod_p(n, k, a[0], a[0], p);
+    var three[100];
+    for (var i = 0; i < 100; i++) three[i] = i == 0 ? 3 : 0;
+    var lamb_numer = prod_mod_p(n, k, x1_sq, three, p);
+
+    // lamb_denom = 2 * a[1]
+    var two[100];
+    for (var i = 0; i < 100; i++) two[i] = i == 0 ? 2 : 0;
+    var lamb_denom = prod_mod_p(n, k, a[1], two, p);
+
+    // lambda = lamb_numer * inv(lamb_denom)
+    var lamb_denom_inv[100] = mod_inv(n, k, lamb_denom, p);
+    var lambda[100] = prod_mod_p(n, k, lamb_numer, lamb_denom_inv, p);
+
+    // out[0] = lambda ** 2 - 2 * a[0]
+    var lambdasq_out[100] = prod_mod_p(n, k, lambda, lambda, p);
+    var out0_pre_out[100] = long_sub_mod_p(n, k, lambdasq_out, a[0], p);
+    var out0_out[100] = long_sub_mod_p(n, k, out0_pre_out, a[0], p);
+    for (var i = 0; i < k; i++) {
+        out[0][i] = out0_out[i];
+    }
+
+    // out[1] = lambda * (a[0] - out[0]) - a[1]
+    var out1_0_out[100] = long_sub_mod_p(n, k, a[0], out[0], p);
+    var out1_1_out[100] = prod_mod_p(n, k, lambda, out1_0_out, p);
+    var out1_out[100] = long_sub_mod_p(n, k, out1_1_out, a[1], p);
+    for (var i = 0; i < k; i++) {
+        out[1][i] = out1_out[i];
+    }
+
     return out;
 }
