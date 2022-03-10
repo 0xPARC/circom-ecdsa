@@ -105,7 +105,7 @@ function secp256k1_addunequal_func(n, k, x1, y1, x2, y2){
 // lamb = (3 * a[0] ** 2) / (2 * a[1]) % p
 // out[0] = lamb ** 2 - (2 * a[0]) % p
 // out[1] = lamb * (a[0] - out[0]) - a[1] % p
-function secp256k1_double_func(n, k, x1, y1, x2, y2){
+function secp256k1_double_func(n, k, x1, y1){
     var a[2][100];
     var b[2][100];
 
