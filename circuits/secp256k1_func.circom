@@ -85,7 +85,7 @@ function secp256k1_addunequal_func(n, k, x1, y1, x2, y2){
     // out[0] = lambda ** 2 - a[0] - b[0]
     var lambdasq_out[100] = prod_mod_p(n, k, lambda, lambda, p);
     var out0_pre_out[100] = long_sub_mod_p(n, k, lambdasq_out, a[0], p);
-    var out0_out[100] = long_sub_mod_p(n, k, out0_pre_out, b[0], p);\
+    var out0_out[100] = long_sub_mod_p(n, k, out0_pre_out, b[0], p);
     for (var i = 0; i < k; i++) {
         out[0][i] = out0_out[i];
     }
