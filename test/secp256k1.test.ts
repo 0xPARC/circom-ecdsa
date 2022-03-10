@@ -88,6 +88,61 @@ describe("Secp256k1AddUnequal", function () {
     test_cases.forEach(test_secp256k1_add_instance);
 });
 
+describe.only("Secp256k1Double", function () {
+    this.timeout(1000 * 1000);
+
+    // runs circom compilation
+    let circuit: any;
+    before(async function () {
+        circuit = await wasm_tester(path.join(__dirname, "circuits", "test_secp256k1_double.circom"));
+    });
+
+    // pub0x, pub0y, sumx, sumy
+    var test_cases: Array<[bigint, bigint, bigint, bigint]> = [];
+
+    // 4 randomly chosen private keys
+    var privkeys: Array<bigint> = [88549154299169935420064281163296845505587953610183896504176354567359434168161n,
+                                   37706893564732085918706190942542566344879680306879183356840008504374628845468n,
+                                   90388020393783788847120091912026443124559466591761394939671630294477859800601n,
+                                   110977009687373213104962226057480551605828725303063265716157300460694423838923n];
+    var pubkeys: Array<Point> = [];
+    for (var idx = 0; idx < 4; idx++) {
+        var pubkey: Point = Point.fromPrivateKey(privkeys[idx]);
+        pubkeys.push(pubkey);
+    }
+
+    for (var idx = 0; idx < 4; idx++) {
+        var sum: Point = pubkeys[idx].add(pubkeys[idx]);
+        test_cases.push([pubkeys[idx].x, pubkeys[idx].y,
+                             sum.x, sum.y]);
+    }
+
+    var test_secp256k1_double_instance = function (test_case: [bigint, bigint, bigint, bigint]) {
+        let pub0x = test_case[0];
+        let pub0y = test_case[1];
+        let sumx = test_case[2];
+        let sumy = test_case[3];
+
+        var pub0x_array: bigint[] = bigint_to_array(86, 3, pub0x);
+        var pub0y_array: bigint[] = bigint_to_array(86, 3, pub0y);
+        var sumx_array: bigint[] = bigint_to_array(86, 3, sumx);
+        var sumy_array: bigint[] = bigint_to_array(86, 3, sumy);
+
+        it('Testing pub0x: ' + pub0x + ' pub0y: ' + pub0y + ' sumx: ' + sumx + ' sumy: ' + sumy, async function() {
+            let witness = await circuit.calculateWitness({"in": [pub0x_array, pub0y_array]});
+            expect(witness[1]).to.equal(sumx_array[0]);
+            expect(witness[2]).to.equal(sumx_array[1]);
+            expect(witness[3]).to.equal(sumx_array[2]);
+            expect(witness[4]).to.equal(sumy_array[0]);
+            expect(witness[5]).to.equal(sumy_array[1]);
+            expect(witness[6]).to.equal(sumy_array[2]);
+            await circuit.checkConstraints(witness);
+        });
+    }
+
+    test_cases.forEach(test_secp256k1_double_instance);
+});
+
 describe("Secp256k1PointOnCurve", function () {
     this.timeout(1000 * 1000);
 
