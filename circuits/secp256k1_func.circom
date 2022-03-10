@@ -122,12 +122,12 @@ function secp256k1_double_func(n, k, x1, y1){
     var x1_sq[100] = prod_mod_p(n, k, a[0], a[0], p);
     var three[100];
     for (var i = 0; i < 100; i++) three[i] = i == 0 ? 3 : 0;
-    var lamb_numer = prod_mod_p(n, k, x1_sq, three, p);
+    var lamb_numer[100] = prod_mod_p(n, k, x1_sq, three, p);
 
     // lamb_denom = 2 * a[1]
     var two[100];
     for (var i = 0; i < 100; i++) two[i] = i == 0 ? 2 : 0;
-    var lamb_denom = prod_mod_p(n, k, a[1], two, p);
+    var lamb_denom[100] = prod_mod_p(n, k, a[1], two, p);
 
     // lambda = lamb_numer * inv(lamb_denom)
     var lamb_denom_inv[100] = mod_inv(n, k, lamb_denom, p);
