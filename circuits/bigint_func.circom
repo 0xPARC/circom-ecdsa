@@ -1,5 +1,10 @@
 pragma circom 2.0.2;
 
+function isNegative(x) {
+    // half babyjubjub field size
+    return x > 10944121435919637611123202872628637544274182200208017171849102093287904247808 ? 1 : 0;
+}
+
 function log_ceil(n) {
    var n_temp = n;
    for (var i = 0; i < 254; i++) {
@@ -17,6 +22,97 @@ function SplitFn(in, n, m) {
 
 function SplitThreeFn(in, n, m, k) {
     return [in % (1 << n), (in \ (1 << n)) % (1 << m), (in \ (1 << n + m)) % (1 << k)];
+}
+
+// in is an m bit number
+// split into ceil(m/n) n-bit registers
+function splitOverflowedRegister(m, n, in) {
+    var out[100];
+
+    for (var i = 0; i < 100; i++) {
+        out[i] = 0;
+    }
+
+    var nRegisters = 0;
+    if (m % n == 0) {
+        nRegisters = m \ n;
+    } else {
+        nRegisters = m \ n + 1;
+    }
+    var running = in;
+    for (var i = 0; i < nRegisters; i++) {
+        out[i] = running % (1<<n);
+        running>>=n;
+    }
+
+    return out;
+}
+
+// m bits per overflowed register (values are potentially negative)
+// n bits per properly-sized register
+// in has k registers
+// out has k + ceil(m/n) - 1 + 1 registers. highest-order potentially negative,
+// all others are positive
+// - 1 since the last register is included in the last ceil(m/n) array
+// + 1 since the carries from previous registers could push you over
+function getProperRepresentation(m, n, k, in) {
+    var ceilMN = 0; // ceil(m/n)
+    if (m % n == 0) {
+        ceilMN = m \ n;
+    } else {
+        ceilMN = m \ n + 1;
+    }
+
+    var pieces[100][100]; // should be pieces[k][ceilMN]
+    for (var i = 0; i < k; i++) {
+        for (var j = 0; j < 100; j++) {
+            pieces[i][j] = 0;
+        }
+        if (isNegative(in[i]) == 1) {
+            var negPieces[100] = splitOverflowedRegister(m, n, -1 * in[i]);
+            for (var j = 0; j < ceilMN; j++) {
+                pieces[i][j] = -1 * negPieces[j];
+            }
+        } else {
+            pieces[i] = splitOverflowedRegister(m, n, in[i]);
+        }
+    }
+
+    var out[100]; // should be out[k + ceilMN]
+    var carries[100]; // should be carries[k + ceilMN]
+    for (var i = 0; i < 100; i++) {
+        out[i] = 0;
+        carries[i] = 0;
+    }
+    for (var registerIdx = 0; registerIdx < k + ceilMN; registerIdx++) {
+        var thisRegisterValue = 0;
+        if (registerIdx > 0) {
+            thisRegisterValue = carries[registerIdx - 1];
+        }
+
+        var start = 0;
+        if (registerIdx >= ceilMN) {
+            start = registerIdx - ceilMN + 1;
+        }
+
+        // go from start to min(registerIdx, len(pieces)-1)
+        for (var i = start; i <= registerIdx; i++) {
+            if (i < k) {
+                thisRegisterValue += pieces[i][registerIdx - i];
+            }
+        }
+
+        if (isNegative(thisRegisterValue) == 1) {
+            var thisRegisterAbs = -1 * thisRegisterValue;
+            out[registerIdx] = (1<<n) - (thisRegisterAbs % (1<<n));
+            carries[registerIdx] = -1 * (thisRegisterAbs >> n) - 1;
+        } else {
+            out[registerIdx] = thisRegisterValue % (1<<n);
+            carries[registerIdx] = thisRegisterValue >> n;
+        }
+    }
+
+    return out;
 }
 
 // 1 if true, 0 if false
@@ -84,21 +180,21 @@ function long_scalar_mult(n, k, a, b) {
 // out[1] has length k -- remainder
 // implements algorithm of https://people.eecs.berkeley.edu/~fateman/282/F%20Wright%20notes/week4.pdf
 // b[k-1] must be nonzero!
-function long_div(n, k, a, b) {
+function long_div(n, k, m, a, b){
     var out[2][100];
 
     var remainder[200];
-    for (var i = 0; i < 2 * k; i++) {
+    for (var i = 0; i < m + k; i++) {
         remainder[i] = a[i];
     }
 
     var mult[200];
     var dividend[200];
-    for (var i = k; i >= 0; i--) {
-        if (i == k) {
+    for (var i = m; i >= 0; i--) {
+        if (i == m) {
             dividend[k] = 0;
             for (var j = k - 1; j >= 0; j--) {
-                dividend[j] = remainder[j + k];
+                dividend[j] = remainder[j + m];
             }
         } else {
             for (var j = k; j >= 0; j--) {
@@ -110,15 +206,15 @@ function long_div(n, k, a, b) {
 
         var mult_shift[100] = long_scalar_mult(n, k, out[0][i], b);
         var subtrahend[200];
-        for (var j = 0; j < 2 * k; j++) {
+        for (var j = 0; j < m + k; j++) {
             subtrahend[j] = 0;
         }
         for (var j = 0; j <= k; j++) {
-            if (i + j < 2 * k) {
+            if (i + j < m + k) {
                subtrahend[i + j] = mult_shift[j];
             }
         }
-        remainder = long_sub(n, 2 * k, remainder, subtrahend);
+        remainder = long_sub(n, m + k, remainder, subtrahend);
     }
     for (var i = 0; i < k; i++) {
         out[1][i] = remainder[i];
@@ -249,7 +345,7 @@ function mod_exp(n, k, a, p, e) {
             var temp[200]; // length 2 * k
             temp = prod(n, k, out, a);
             var temp2[2][100];
-            temp2 = long_div(n, k, temp, p);
+            temp2 = long_div(n, k, k, temp, p);
             out = temp2[1];
         }
 
@@ -258,7 +354,7 @@ function mod_exp(n, k, a, p, e) {
             var temp[200]; // length 2 * k
             temp = prod(n, k, out, out);
             var temp2[2][100];
-            temp2 = long_div(n, k, temp, p);
+            temp2 = long_div(n, k, k, temp, p);
             out = temp2[1];
         }
 
@@ -308,4 +404,34 @@ function mod_inv(n, k, a, p) {
     var out[100];
     out = mod_exp(n, k, a, pCopy, pMinusTwo);
     return out;
+}
+
+// a, b and out are all n bits k registers
+function long_sub_mod_p(n, k, a, b, p){
+    var gt = long_gt(n, k, a, b);
+    var tmp[100];
+    if(gt){
+        tmp = long_sub(n, k, a, b);
+    }
+    else{
+        tmp = long_sub(n, k, b, a);
+    }
+    var out[2][100];
+    for(var i = k;i < 2 * k; i++){
+        tmp[i] = 0;
+    }
+    out = long_div(n, k, k, tmp, p);
+    if(gt==0){
+        tmp = long_sub(n, k, p, out[1]);
+    }
+    return tmp;
+}
+
+// a, b, p and out are all n bits k registers
+function prod_mod_p(n, k, a, b, p){
+    var tmp[100];
+    var result[2][100];
+    tmp = prod(n, k, a, b);
+    result = long_div(n, k, k, tmp, p);
+    return result[1];
 }

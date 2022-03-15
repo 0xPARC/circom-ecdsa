@@ -39,7 +39,7 @@ template Secp256k1AddUnequal(n, k) {
     signal lambda[k];
     var sub0inv[100] = mod_inv(n, k, sub0.out, p);
     var sub1_sub0inv[100] = prod(n, k, sub1.out, sub0inv);
-    var lamb_arr[2][100] = long_div(n, k, sub1_sub0inv, p);
+    var lamb_arr[2][100] = long_div(n, k, k, sub1_sub0inv, p);
     for (var i = 0; i < k; i++) {
         lambda[i] <-- lamb_arr[1][i];
     }
@@ -138,7 +138,7 @@ template Secp256k1Double(n, k) {
     }
     var inv_2[100] = mod_inv(n, k, long_2, p);
     var long_3_div_2[100] = prod(n, k, long_3, inv_2);
-    var long_3_div_2_mod_p[2][100] = long_div(n, k, long_3_div_2, p);
+    var long_3_div_2_mod_p[2][100] = long_div(n, k, k, long_3_div_2, p);
 
     component numer = BigMultModP(n, k);
     for (var i = 0; i < k; i++) {
@@ -150,7 +150,7 @@ template Secp256k1Double(n, k) {
     signal lambda[k];
     var denom_inv[100] = mod_inv(n, k, in[1], p);
     var product[100] = prod(n, k, numer.out, denom_inv);
-    var lamb_arr[2][100] = long_div(n, k, product, p);
+    var lamb_arr[2][100] = long_div(n, k, k, product, p);
     for (var i = 0; i < k; i++) {
         lambda[i] <-- lamb_arr[1][i];
     }
