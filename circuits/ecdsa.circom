@@ -52,7 +52,7 @@ template ECDSAPrivToPub(n, k) {
 
     // multiplexers[i][l].out will be the coordinates of:
     // selectors[i].out * (2 ** (i * stride)) * G    if selectors[i].out is non-zero
-    // (2 ** 257) * G                                if selectors[i].out is zero
+    // (2 ** 255) * G                                if selectors[i].out is zero
     component multiplexers[num_strides][2];
     // select from k-register outputs using a 2 ** stride bit selector
     for (var i = 0; i < num_strides; i++) {
