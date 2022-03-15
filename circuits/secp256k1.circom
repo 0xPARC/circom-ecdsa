@@ -3,221 +3,311 @@ pragma circom 2.0.2;
 include "../node_modules/circomlib/circuits/bitify.circom";
 
 include "bigint.circom";
+include "bigint_4x64_mult.circom";
 include "bigint_func.circom";
 include "secp256k1_func.circom";
+include "secp256k1_utils.circom";
 
-// requires a[0] != b[0]
-//
 // Implements:
-// lamb = (b[1] - a[1]) / (b[0] - a[0]) % p
-// out[0] = lamb ** 2 - a[0] - b[0] % p
-// out[1] = lamb * (a[0] - out[0]) - a[1] % p
-template Secp256k1AddUnequal(n, k) {
-    signal input a[2][k];
-    signal input b[2][k];
+// x_1 + x_2 + x_3 - lambda^2 = 0 mod p
+// where p is the secp256k1 field size
+// and lambda is the slope of the line between (x_1, y_1) and (x_2, y_2)
+// this equation is equivalent to:
+// x1^3 + x2^3 - x1^2x2 - x1x2^2 + x2^2x3 + x1^2x3 - 2x1x2x3 - y2^2 - 2y1y2 - y1^2 = 0 mod p
+template AddUnequalCubicConstraint() {
+    signal input x1[4];
+    signal input y1[4];
+    signal input x2[4];
+    signal input y2[4];
+    signal input x3[4];
+    signal input y3[4];
 
-    signal output out[2][k];
+    signal x13[10]; // 197 bits
+    component x13Comp = A3NoCarry();
+    for (var i = 0; i < 4; i++) x13Comp.a[i] <== x1[i];
+    for (var i = 0; i < 10; i++) x13[i] <== x13Comp.a3[i];
 
-    var p[100] = get_secp256k1_prime(n, k);
+    signal x23[10]; // 197 bits
+    component x23Comp = A3NoCarry();
+    for (var i = 0; i < 4; i++) x23Comp.a[i] <== x2[i];
+    for (var i = 0; i < 10; i++) x23[i] <== x23Comp.a3[i];
 
-    // b[1] - a[1]
-    component sub1 = BigSubModP(n, k);
-    for (var i = 0; i < k; i++) {
-        sub1.a[i] <== b[1][i];
-        sub1.b[i] <== a[1][i];
-        sub1.p[i] <== p[i];
-    }
+    signal x12x2[10]; // 197 bits
+    component x12x2Comp = A2B1NoCarry();
+    for (var i = 0; i < 4; i++) x12x2Comp.a[i] <== x1[i];
+    for (var i = 0; i < 4; i++) x12x2Comp.b[i] <== x2[i];
+    for (var i = 0; i < 10; i++) x12x2[i] <== x12x2Comp.a2b1[i];
 
-    // b[0] - a[0]
-    component sub0 = BigSubModP(n, k);
-    for (var i = 0; i < k; i++) {
-        sub0.a[i] <== b[0][i];
-        sub0.b[i] <== a[0][i];
-        sub0.p[i] <== p[i];
-    }
+    signal x1x22[10]; // 197 bits
+    component x1x22Comp = A2B1NoCarry();
+    for (var i = 0; i < 4; i++) x1x22Comp.a[i] <== x2[i];
+    for (var i = 0; i < 4; i++) x1x22Comp.b[i] <== x1[i];
+    for (var i = 0; i < 10; i++) x1x22[i] <== x1x22Comp.a2b1[i];
 
-    signal lambda[k];
-    var sub0inv[100] = mod_inv(n, k, sub0.out, p);
-    var sub1_sub0inv[100] = prod(n, k, sub1.out, sub0inv);
-    var lamb_arr[2][100] = long_div(n, k, k, sub1_sub0inv, p);
-    for (var i = 0; i < k; i++) {
-        lambda[i] <-- lamb_arr[1][i];
-    }
-    component range_checks[k];
-    for (var i = 0; i < k; i++) {
-        range_checks[i] = Num2Bits(n);
-        range_checks[i].in <== lambda[i];
-    }
-    component lt = BigLessThan(n, k);
-    for (var i = 0; i < k; i++) {
-        lt.a[i] <== lambda[i];
-        lt.b[i] <== p[i];
-    }
-    lt.out === 1;
+    signal x22x3[10]; // 197 bits
+    component x22x3Comp = A2B1NoCarry();
+    for (var i = 0; i < 4; i++) x22x3Comp.a[i] <== x2[i];
+    for (var i = 0; i < 4; i++) x22x3Comp.b[i] <== x3[i];
+    for (var i = 0; i < 10; i++) x22x3[i] <== x22x3Comp.a2b1[i];
 
-    component lambda_check = BigMultModP(n, k);
-    for (var i = 0; i < k; i++) {
-        lambda_check.a[i] <== sub0.out[i];
-        lambda_check.b[i] <== lambda[i];
-        lambda_check.p[i] <== p[i];
-    }
-    for (var i = 0; i < k; i++) {
-        lambda_check.out[i] === sub1.out[i];
-    }
+    signal x12x3[10]; // 197 bits
+    component x12x3Comp = A2B1NoCarry();
+    for (var i = 0; i < 4; i++) x12x3Comp.a[i] <== x1[i];
+    for (var i = 0; i < 4; i++) x12x3Comp.b[i] <== x3[i];
+    for (var i = 0; i < 10; i++) x12x3[i] <== x12x3Comp.a2b1[i];
 
-    component lambdasq = BigMultModP(n, k);
-    for (var i = 0; i < k; i++) {
-        lambdasq.a[i] <== lambda[i];
-        lambdasq.b[i] <== lambda[i];
-        lambdasq.p[i] <== p[i];
-    }
-    component out0_pre = BigSubModP(n, k);
-    for (var i = 0; i < k; i++) {
-        out0_pre.a[i] <== lambdasq.out[i];
-        out0_pre.b[i] <== a[0][i];
-        out0_pre.p[i] <== p[i];
-    }
-    component out0 = BigSubModP(n, k);
-    for (var i = 0; i < k; i++) {
-        out0.a[i] <== out0_pre.out[i];
-        out0.b[i] <== b[0][i];
-        out0.p[i] <== p[i];
-    }
-    for (var i = 0; i < k; i++) {
-        out[0][i] <== out0.out[i];
-    }
+    signal x1x2x3[10]; // 197 bits
+    component x1x2x3Comp = A1B1C1NoCarry();
+    for (var i = 0; i < 4; i++) x1x2x3Comp.a[i] <== x1[i];
+    for (var i = 0; i < 4; i++) x1x2x3Comp.b[i] <== x2[i];
+    for (var i = 0; i < 4; i++) x1x2x3Comp.c[i] <== x3[i];
+    for (var i = 0; i < 10; i++) x1x2x3[i] <== x1x2x3Comp.a1b1c1[i];
 
-    component out1_0 = BigSubModP(n, k);
-    for (var i = 0; i < k; i++) {
-        out1_0.a[i] <== a[0][i];
-        out1_0.b[i] <== out[0][i];
-        out1_0.p[i] <== p[i];
-    }
-    component out1_1 = BigMultModP(n, k);
-    for (var i = 0; i < k; i++) {
-        out1_1.a[i] <== lambda[i];
-        out1_1.b[i] <== out1_0.out[i];
-        out1_1.p[i] <== p[i];
-    }
-    component out1 = BigSubModP(n, k);
-    for (var i = 0; i < k; i++) {
-        out1.a[i] <== out1_1.out[i];
-        out1.b[i] <== a[1][i];
-        out1.p[i] <== p[i];
-    }
-    for (var i = 0; i < k; i++) {
-        out[1][i] <== out1.out[i];
+    signal y12[7]; // 130 bits
+    component y12Comp = A2NoCarry();
+    for (var i = 0; i < 4; i++) y12Comp.a[i] <== y1[i];
+    for (var i = 0; i < 7; i++) y12[i] <== y12Comp.a2[i];
+
+    signal y22[7]; // 130 bits
+    component y22Comp = A2NoCarry();
+    for (var i = 0; i < 4; i++) y22Comp.a[i] <== y2[i];
+    for (var i = 0; i < 7; i++) y22[i] <== y22Comp.a2[i];
+
+    signal y1y2[7]; // 130 bits
+    component y1y2Comp = BigMultNoCarry(64, 64, 64, 4, 4);
+    for (var i = 0; i < 4; i++) y1y2Comp.a[i] <== y1[i];
+    for (var i = 0; i < 4; i++) y1y2Comp.b[i] <== y2[i];
+    for (var i = 0; i < 7; i++) y1y2[i] <== y1y2Comp.out[i];
+ 
+    component zeroCheck = CheckCubicModPIsZero(200); // 200 bits per register
+    for (var i = 0; i < 10; i++) {
+        if (i < 7) {
+            zeroCheck.in[i] <== x13[i] + x23[i] - x12x2[i] - x1x22[i] + x22x3[i] + x12x3[i] - 2 * x1x2x3[i] - y12[i] + 2 * y1y2[i] - y22[i];
+        } else {
+            zeroCheck.in[i] <== x13[i] + x23[i] - x12x2[i] - x1x22[i] + x22x3[i] + x12x3[i] - 2 * x1x2x3[i];
+        }
     }
 }
 
 // Implements:
-// lamb = (3 / 2) * in[0] ** 2 / in[1] % p
-// out[0] = lamb ** 2 - 2 * a[0] % p
-// out[1] = lamb * (in[0] - out[0]) - in[1] % p
+// x3y2 + x2y3 + x2y1 - x3y1 - x1y2 - x1y3 == 0 mod p
+// for secp prime p
+// used to show (x1, y1), (x2, y2), (x3, -y3) are co-linear
+template Secp256k1PointOnLine() {
+    signal input x1[4];
+    signal input y1[4];
+
+    signal input x2[4];
+    signal input y2[4];
+
+    signal input x3[4];
+    signal input y3[4];
+
+    // first, we compute representations of x3y2, x2y3, x2y1, x3y1, x1y2, x1y3.
+    // these representations have overflowed, nonnegative registers
+    signal x3y2[7];
+    component x3y2Comp = BigMultNoCarry(64, 64, 64, 4, 4);
+    for (var i = 0; i < 4; i++) x3y2Comp.a[i] <== x3[i];
+    for (var i = 0; i < 4; i++) x3y2Comp.b[i] <== y2[i];
+    for (var i = 0; i < 7; i++) x3y2[i] <== x3y2Comp.out[i]; // 130 bits
+
+    signal x3y1[7];
+    component x3y1Comp = BigMultNoCarry(64, 64, 64, 4, 4);
+    for (var i = 0; i < 4; i++) x3y1Comp.a[i] <== x3[i];
+    for (var i = 0; i < 4; i++) x3y1Comp.b[i] <== y1[i];
+    for (var i = 0; i < 7; i++) x3y1[i] <== x3y1Comp.out[i]; // 130 bits
+
+    signal x2y3[7];
+    component x2y3Comp = BigMultNoCarry(64, 64, 64, 4, 4);
+    for (var i = 0; i < 4; i++) x2y3Comp.a[i] <== x2[i];
+    for (var i = 0; i < 4; i++) x2y3Comp.b[i] <== y3[i];
+    for (var i = 0; i < 7; i++) x2y3[i] <== x2y3Comp.out[i]; // 130 bits
+
+    signal x2y1[7];
+    component x2y1Comp = BigMultNoCarry(64, 64, 64, 4, 4);
+    for (var i = 0; i < 4; i++) x2y1Comp.a[i] <== x2[i];
+    for (var i = 0; i < 4; i++) x2y1Comp.b[i] <== y1[i];
+    for (var i = 0; i < 7; i++) x2y1[i] <== x2y1Comp.out[i]; // 130 bits
+
+    signal x1y3[7];
+    component x1y3Comp = BigMultNoCarry(64, 64, 64, 4, 4);
+    for (var i = 0; i < 4; i++) x1y3Comp.a[i] <== x1[i];
+    for (var i = 0; i < 4; i++) x1y3Comp.b[i] <== y3[i];
+    for (var i = 0; i < 7; i++) x1y3[i] <== x1y3Comp.out[i]; // 130 bits
+
+    signal x1y2[7];
+    component x1y2Comp = BigMultNoCarry(64, 64, 64, 4, 4);
+    for (var i = 0; i < 4; i++) x1y2Comp.a[i] <== x1[i];
+    for (var i = 0; i < 4; i++) x1y2Comp.b[i] <== y2[i];
+    for (var i = 0; i < 7; i++) x1y2[i] <== x1y2Comp.out[i]; // 130 bits
+    
+    component zeroCheck = CheckQuadraticModPIsZero(132);
+    for (var i = 0; i < 7; i++) {
+        zeroCheck.in[i] <== x3y2[i] + x2y3[i] + x2y1[i] - x3y1[i] - x1y2[i] - x1y3[i];
+    }
+}
+
+template Secp256k1PointOnTangent() {
+    signal input x1[4];
+    signal input y1[4];
+    signal input x3[4];
+    signal input y3[4];
+
+    // first, we compute representations of y1^2, y1y3, x1^3, x1^2x3
+    signal y12[7]; // 130 bits
+    component y12Comp = A2NoCarry();
+    for (var i = 0; i < 4; i++) y12Comp.a[i] <== y1[i];
+    for (var i = 0; i < 7; i++) y12[i] <== y12Comp.a2[i];
+
+    signal y1y3[7]; // 130 bits
+    component y1y3Comp = BigMultNoCarry(64, 64, 64, 4, 4);
+    for (var i = 0; i < 4; i++) y1y3Comp.a[i] <== y1[i];
+    for (var i = 0; i < 4; i++) y1y3Comp.b[i] <== y3[i];
+    for (var i = 0; i < 7; i++) y1y3[i] <== y1y3Comp.out[i];
+
+    signal x13[10]; // 197 bits
+    component x13Comp = A3NoCarry();
+    for (var i = 0; i < 4; i++) x13Comp.a[i] <== x1[i];
+    for (var i = 0; i < 10; i++) x13[i] <== x13Comp.a3[i];
+
+    signal x12x3[10]; // 197 bits
+    component x12x3Comp = A2B1NoCarry();
+    for (var i = 0; i < 4; i++) x12x3Comp.a[i] <== x1[i];
+    for (var i = 0; i < 4; i++) x12x3Comp.b[i] <== x3[i];
+    for (var i = 0; i < 10; i++) x12x3[i] <== x12x3Comp.a2b1[i];
+
+    component zeroCheck = CheckCubicModPIsZero(199);
+    for (var i = 0; i < 10; i++) {
+        if (i < 7) zeroCheck.in[i] <== 2 * y12[i] + 2 * y1y3[i] - 3 * x13[i] + 3 * x12x3[i];
+        else zeroCheck.in[i] <== -3 * x13[i] + 3 * x12x3[i];
+    }
+}
+
+// Implements:
+// x^3 + 7 - y^2 == 0 mod p
+// where p is the secp256k1 field size
+template Secp256k1PointOnCurve() {
+    signal input x[4];
+    signal input y[4];
+
+    // first, we compute representations of x^3 and y^2.
+    // these representations have overflowed, nonnegative registers
+    signal x3[10]; // 197 bits
+    component x3Comp = A3NoCarry();
+    for (var i = 0; i < 4; i++) x3Comp.a[i] <== x[i];
+    for (var i = 0; i < 10; i++) x3[i] <== x3Comp.a3[i];
+
+    signal y2[7]; // 130 bits
+    component y2Comp = A2NoCarry();
+    for (var i = 0; i < 4; i++) y2Comp.a[i] <== y[i];
+    for (var i = 0; i < 7; i++) y2[i] <== y2Comp.a2[i];
+    
+    component zeroCheck = CheckCubicModPIsZero(197); // 197 bits per register
+    for (var i = 0; i < 10; i++) {
+        if (i == 0) zeroCheck.in[i] <== x3[i] - y2[i] + 7;
+        else if (i < 7) zeroCheck.in[i] <== x3[i] - y2[i];
+        else zeroCheck.in[i] <== x3[i];
+    }
+}
+
+template Secp256k1AddUnequal(n, k) {
+    assert(n == 64 && k == 4);
+
+    signal input a[2][k];
+    signal input b[2][k];
+
+    signal output out[2][k];
+    var x1[4];
+    var y1[4];
+    var x2[4];
+    var y2[4];
+    for(var i=0;i<4;i++){
+        x1[i] = a[0][i];
+        y1[i] = a[1][i];
+        x2[i] = b[0][i];
+        y2[i] = b[1][i];
+    }
+
+    var tmp[2][100] = secp256k1_addunequal_func(n, k, x1, y1, x2, y2);
+    for(var i = 0; i < k;i++){
+        out[0][i] <-- tmp[0][i];
+        out[1][i] <-- tmp[1][i];
+    }
+
+    component cubic_constraint = AddUnequalCubicConstraint();
+    for(var i = 0; i < k; i++){
+        cubic_constraint.x1[i] <== x1[i];
+        cubic_constraint.y1[i] <== y1[i];
+        cubic_constraint.x2[i] <== x2[i];
+        cubic_constraint.y2[i] <== y2[i];
+        cubic_constraint.x3[i] <== out[0][i];
+        cubic_constraint.y3[i] <== out[1][i];
+    }
+    
+    component point_on_line = Secp256k1PointOnLine();
+    for(var i = 0; i < k; i++){
+        point_on_line.x1[i] <== a[0][i];
+        point_on_line.y1[i] <== a[1][i];
+        point_on_line.x2[i] <== b[0][i];
+        point_on_line.y2[i] <== b[1][i];
+        point_on_line.x3[i] <== out[0][i];
+        point_on_line.y3[i] <== out[1][i];
+    }
+
+    component x_check_in_range = CheckInRangeSecp256k1();
+    component y_check_in_range = CheckInRangeSecp256k1();
+    for(var i = 0; i < k; i++){
+        x_check_in_range.in[i] <== out[0][i];
+        y_check_in_range.in[i] <== out[1][i];
+    }
+}
+
 template Secp256k1Double(n, k) {
+    assert(n == 64 && k == 4);
+
     signal input in[2][k];
 
     signal output out[2][k];
-
-    var p[100] = get_secp256k1_prime(n, k);
-
-    component in0_sq = BigMultModP(n, k);
-    for (var i = 0; i < k; i++) {
-        in0_sq.a[i] <== in[0][i];
-        in0_sq.b[i] <== in[0][i];
-        in0_sq.p[i] <== p[i];
+    var x1[4];
+    var y1[4];
+    for(var i=0;i<4;i++){
+        x1[i] = in[0][i];
+        y1[i] = in[1][i];
     }
 
-    var long_2[100];
-    var long_3[100];
-    long_2[0] = 2;
-    long_3[0] = 3;
-    for (var i = 1; i < k; i++) {
-        long_2[i] = 0;
-        long_3[i] = 0;
-    }
-    var inv_2[100] = mod_inv(n, k, long_2, p);
-    var long_3_div_2[100] = prod(n, k, long_3, inv_2);
-    var long_3_div_2_mod_p[2][100] = long_div(n, k, k, long_3_div_2, p);
-
-    component numer = BigMultModP(n, k);
-    for (var i = 0; i < k; i++) {
-        numer.a[i] <== long_3_div_2_mod_p[1][i];
-        numer.b[i] <== in0_sq.out[i];
-        numer.p[i] <== p[i];
+    var tmp[2][100] = secp256k1_double_func(n, k, x1, y1);
+    for(var i = 0; i < k;i++){
+        out[0][i] <-- tmp[0][i];
+        out[1][i] <-- tmp[1][i];
     }
 
-    signal lambda[k];
-    var denom_inv[100] = mod_inv(n, k, in[1], p);
-    var product[100] = prod(n, k, numer.out, denom_inv);
-    var lamb_arr[2][100] = long_div(n, k, k, product, p);
-    for (var i = 0; i < k; i++) {
-        lambda[i] <-- lamb_arr[1][i];
+    component point_on_tangent = Secp256k1PointOnTangent();
+    for(var i = 0; i < k; i++){
+        point_on_tangent.x1[i] <== x1[i];
+        point_on_tangent.y1[i] <== y1[i];
+        point_on_tangent.x3[i] <== out[0][i];
+        point_on_tangent.y3[i] <== out[1][i];
     }
-    component lt = BigLessThan(n, k);
-    for (var i = 0; i < k; i++) {
-        lt.a[i] <== lambda[i];
-        lt.b[i] <== p[i];
-    }
-    lt.out === 1;
-
-    component lambda_range_checks[k];
-    component lambda_check = BigMultModP(n, k);
-    for (var i = 0; i < k; i++) {
-        lambda_range_checks[i] = Num2Bits(n);
-        lambda_range_checks[i].in <== lambda[i];
-
-        lambda_check.a[i] <== in[1][i];
-        lambda_check.b[i] <== lambda[i];
-        lambda_check.p[i] <== p[i];
-    }
-    for (var i = 0; i < k; i++) {
-        lambda_check.out[i] === numer.out[i];
+ 
+    component point_on_curve = Secp256k1PointOnCurve();
+    for(var i = 0; i < k; i++){
+        point_on_curve.x[i] <== out[0][i];
+        point_on_curve.y[i] <== out[1][i];
     }
 
-    component lambdasq = BigMultModP(n, k);
-    for (var i = 0; i < k; i++) {
-        lambdasq.a[i] <== lambda[i];
-        lambdasq.b[i] <== lambda[i];
-        lambdasq.p[i] <== p[i];
-    }
-    component out0_pre = BigSubModP(n, k);
-    for (var i = 0; i < k; i++) {
-        out0_pre.a[i] <== lambdasq.out[i];
-        out0_pre.b[i] <== in[0][i];
-        out0_pre.p[i] <== p[i];
-    }
-    component out0 = BigSubModP(n, k);
-    for (var i = 0; i < k; i++) {
-        out0.a[i] <== out0_pre.out[i];
-        out0.b[i] <== in[0][i];
-        out0.p[i] <== p[i];
-    }
-    for (var i = 0; i < k; i++) {
-        out[0][i] <== out0.out[i];
+    component x_check_in_range = CheckInRangeSecp256k1();
+    component y_check_in_range = CheckInRangeSecp256k1();
+    for(var i = 0; i < k; i++){
+        x_check_in_range.in[i] <== out[0][i];
+        y_check_in_range.in[i] <== out[1][i];
     }
 
-    component out1_0 = BigSubModP(n, k);
-    for (var i = 0; i < k; i++) {
-        out1_0.a[i] <== in[0][i];
-        out1_0.b[i] <== out[0][i];
-        out1_0.p[i] <== p[i];
+    component x3_eq_x1 = BigIsEqual(4);
+    for(var i = 0; i < k; i++){
+        x3_eq_x1.in[0][i] <== out[0][i];
+        x3_eq_x1.in[1][i] <== x1[i];
     }
-    component out1_1 = BigMultModP(n, k);
-    for (var i = 0; i < k; i++) {
-        out1_1.a[i] <== lambda[i];
-        out1_1.b[i] <== out1_0.out[i];
-        out1_1.p[i] <== p[i];
-    }
-    component out1 = BigSubModP(n, k);
-    for (var i = 0; i < k; i++) {
-        out1.a[i] <== out1_1.out[i];
-        out1.b[i] <== in[1][i];
-        out1.p[i] <== p[i];
-    }
-    for (var i = 0; i < k; i++) {
-        out[1][i] <== out1.out[i];
-    }
+    x3_eq_x1.out === 0;
 }
 
 template Secp256k1ScalarMult(n, k) {
@@ -290,72 +380,3 @@ template Secp256k1ScalarMult(n, k) {
         out[1][idx] <== partial[0][1][idx];
     }
 }
-
-// Implements:
-// out = (y^2 == x^3 + 7 (mod p))
-template Secp256k1PointOnCurve(n, k) {
-    signal input x[k];
-    signal input y[k];
-    signal output out;
-
-    var p[100] = get_secp256k1_prime(n, k);
-
-    // compute y^2 = y * y
-    component muly2 = BigMultModP(n, k);
-    for (var i = 0; i < k; i++) {
-        muly2.a[i] <== y[i];
-        muly2.b[i] <== y[i];
-        muly2.p[i] <== p[i];
-    }
-
-    // compute x^2 = x * x
-    component mulx2 = BigMultModP(n, k);
-    for (var i = 0; i < k; i++) {
-        mulx2.a[i] <== x[i];
-        mulx2.b[i] <== x[i];
-        mulx2.p[i] <== p[i];
-    }
-
-    // compute x^3 = x^2 * x
-    component mulx3 = BigMultModP(n, k);
-    for (var i = 0; i < k; i++) {
-        mulx3.a[i] <== mulx2.out[i];
-        mulx3.b[i] <== x[i];
-        mulx3.p[i] <== p[i];
-    }
-
-    // compute diff = y^2 - x^3
-    component diff = BigSubModP(n, k);
-    for (var i = 0; i < k; i++) {
-        diff.a[i] <== muly2.out[i];
-        diff.b[i] <== mulx3.out[i];
-        diff.p[i] <== p[i];
-    }
-
-    // check diff == 7
-    component compare[k];
-    signal num_equal[k - 1];
-    for (var i = 0; i < k; i++) {
-        compare[i] = IsEqual();
-        if (i == 0) {
-            compare[i].in[0] <== 7;
-        }
-        else {
-            compare[i].in[0] <== 0;
-        }
-        compare[i].in[1] <== diff.out[i];
-
-        if (i == 1) {
-            num_equal[i - 1] <== compare[0].out + compare[1].out;
-        }
-        else if (i > 1) {
-            num_equal[i - 1] <== num_equal[i - 2] + compare[i].out;
-        }
-    }
-    component compare_total = IsEqual();
-    compare_total.in[0] <== k;
-    compare_total.in[1] <== num_equal[k - 2];
-
-    out <== compare_total.out;
-}
-

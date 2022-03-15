@@ -88,6 +88,7 @@ describe("Secp256k1AddUnequal", function () {
     test_cases.forEach(test_secp256k1_add_instance);
 });
 
+// TODO: figure out some way to test that if point is not on curve, pf gen should fail
 describe("Secp256k1PointOnCurve", function () {
     this.timeout(1000 * 1000);
 
@@ -98,42 +99,35 @@ describe("Secp256k1PointOnCurve", function () {
     });
 
     // x, y, on/off
-    var test_cases: Array<[bigint, bigint, bigint]> = [];
-
-    // (0, 0) not on curve
-    test_cases.push([0n, 0n, 0n]);
-
-    // (1, 1) not on curve
-    test_cases.push([1n, 1n, 0n]);
+    var test_cases: Array<[bigint, bigint]> = [];
 
     // base point G on curve
     test_cases.push([
         55066263022277343669578718895168534326250603453777594175500187360389116729240n,
-        32670510020758816978083085130507043184471273380659243275938904335757337482424n,
-        1n
+        32670510020758816978083085130507043184471273380659243275938904335757337482424n
     ]);
 
+    // TODO: figure out how to test that circuit fails on this input
+    /*
     // modified point not on curve
     test_cases.push([
         45066263022277343669578718895168534326250603453777594175500187360389116729240n,
-        22670510020758816978083085130507043184471273380659243275938904335757337482424n,
-        0n
+        22670510020758816978083085130507043184471273380659243275938904335757337482424n
     ]);
+    */
 
-    var test_secp256k1_poc_instance = function (test_case: [bigint, bigint, bigint]) {
+    var test_secp256k1_poc_instance = function (test_case: [bigint, bigint]) {
         let x = test_case[0];
         let y = test_case[1];
-        let r = test_case[2];
 
         var x_array: bigint[] = bigint_to_array(86, 3, x);
         var y_array: bigint[] = bigint_to_array(86, 3, y);
 
-        it('Testing x: ' + x + ' y: ' + y + " r: " + r,
+        it('Testing x: ' + x + ' y: ' + y,
                 async function() {
                     let witness = await circuit.calculateWitness({
                         "x": x_array, "y": y_array,
                     });
-                    expect(witness[1]).to.equal(r);
                     await circuit.checkConstraints(witness);
                 });
     }

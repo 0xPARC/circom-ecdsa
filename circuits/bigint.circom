@@ -341,6 +341,24 @@ template BigLessThan(n, k){
      out <== ors[0].out;
 }
 
+template BigIsEqual(k){
+    signal input in[2][k];
+    signal output out;
+    component isEqual[k+1];
+    var sum = 0;
+    for(var i = 0; i < k; i++){
+        isEqual[i] = IsEqual();
+        isEqual[i].in[0] <== in[0][i];
+        isEqual[i].in[1] <== in[1][i];
+        sum = sum + isEqual[i].out;
+    }
+
+    isEqual[k] = IsEqual();
+    isEqual[k].in[0] <== sum;
+    isEqual[k].in[1] <== k;
+    out <== isEqual[k].out;
+}
+
 // leading register of b should be non-zero
 template BigMod(n, k) {
     assert(n <= 126);
