@@ -222,36 +222,50 @@ describe("Secp256k1PointOnCurve", function () {
     });
 
     // x, y, on/off
-    var test_cases: Array<[bigint, bigint]> = [];
+    var test_cases: Array<[bigint, bigint, boolean]> = [];
 
     // base point G on curve
     test_cases.push([
         55066263022277343669578718895168534326250603453777594175500187360389116729240n,
-        32670510020758816978083085130507043184471273380659243275938904335757337482424n
+        32670510020758816978083085130507043184471273380659243275938904335757337482424n,
+        true
     ]);
 
-    // TODO: figure out how to test that circuit fails on this input
-    /*
     // modified point not on curve
     test_cases.push([
         45066263022277343669578718895168534326250603453777594175500187360389116729240n,
-        22670510020758816978083085130507043184471273380659243275938904335757337482424n
+        22670510020758816978083085130507043184471273380659243275938904335757337482424n,
+        false
     ]);
-    */
 
-    var test_secp256k1_poc_instance = function (test_case: [bigint, bigint]) {
+    var test_secp256k1_poc_instance = function (test_case: [bigint, bigint, boolean]) {
         let x = test_case[0];
         let y = test_case[1];
+        let on_curve = test_case[2];
 
-        var x_array: bigint[] = bigint_to_array(86, 3, x);
-        var y_array: bigint[] = bigint_to_array(86, 3, y);
+        var x_array: bigint[] = bigint_to_array(64, 4, x);
+        var y_array: bigint[] = bigint_to_array(64, 4, y);
 
-        it('Testing x: ' + x + ' y: ' + y,
+        it('Testing x: ' + x + ' y: ' + y + ' on_curve: ' + on_curve,
                 async function() {
-                    let witness = await circuit.calculateWitness({
-                        "x": x_array, "y": y_array,
-                    });
-                    await circuit.checkConstraints(witness);
+                    if (on_curve) {
+                        let witness = await circuit.calculateWitness({
+                            "x": x_array, "y": y_array,
+                        });
+                        await circuit.checkConstraints(witness);
+                    } else {
+                        let witnessCalcSucceeded = true;
+                        try {
+                            // witness generation should fail
+                            await circuit.calculateWitness({
+                                "x": x_array, "y": y_array,
+                            });
+                        } catch (e) {
+                            witnessCalcSucceeded = false;
+                            console.log('point not on curve');
+                        }
+                        expect(witnessCalcSucceeded).to.equal(false);
+                    }
                 });
     }
 
