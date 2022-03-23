@@ -29,9 +29,11 @@ Each of these will create a subdirectory inside a `build` directory at the top l
 
 This process will also generate and verify a proof for a dummy input in the respective `scripts/[circuit_name]` subdirectory, as a smoke test.
 
-## Benchmarks
+## Benchmarks (OUTDATED)
 
-All benchmarks were run on a 20-core 3.3GHz, 64G RAM machine.  Building `verify` requires 56G of RAM.
+We are in the process of rerunning benchmarks following a round of optimizations. The benchmarks below are stale; for example, pubkeygen has been optimized to under 100k constraints.
+
+Benchmarks for a previous version were run on a 20-core 3.3GHz, 64G RAM machine.  Building `verify` requires 56G of RAM.
 
 ||pubkeygen|eth_addr|groupsig|verify|
 |---|---|---|---|---|
