@@ -90,6 +90,63 @@ describe("Secp256k1AddUnequal", function () {
     test_cases.forEach(test_secp256k1_add_instance);
 });
 
+describe("Secp256k1Double", function () {
+    this.timeout(1000 * 1000);
+
+    // runs circom compilation
+    let circuit: any;
+    before(async function () {
+        circuit = await wasm_tester(path.join(__dirname, "circuits", "test_secp256k1_double.circom"));
+    });
+
+    // pubx, puby, doublex, doubley
+    var test_cases: Array<[bigint, bigint, bigint, bigint]> = [];
+
+    // 4 randomly chosen private keys
+    var privkeys: Array<bigint> = [88549154299169935420064281163296845505587953610183896504176354567359434168161n,
+                                   37706893564732085918706190942542566344879680306879183356840008504374628845468n,
+                                   90388020393783788847120091912026443124559466591761394939671630294477859800601n,
+                                   110977009687373213104962226057480551605828725303063265716157300460694423838923n];
+    var pubkeys: Array<Point> = [];
+    for (var idx = 0; idx < 4; idx++) {
+        var pubkey: Point = Point.fromPrivateKey(privkeys[idx]);
+        pubkeys.push(pubkey);
+    }
+
+    for (var idx = 0; idx < 4; idx++) {
+        var double: Point = pubkeys[idx].add(pubkeys[idx]);
+        test_cases.push([pubkeys[idx].x, pubkeys[idx].y,
+                         double.x, double.y]);
+    }
+
+    var test_secp256k1_double_instance = function (test_case: [bigint, bigint, bigint, bigint]) {
+        let pubx = test_case[0];
+        let puby = test_case[1];
+        let doublex = test_case[2];
+        let doubley = test_case[3];
+
+        var pubx_array: bigint[] = bigint_to_array(64, 4, pubx);
+        var puby_array: bigint[] = bigint_to_array(64, 4, puby);
+        var doublex_array: bigint[] = bigint_to_array(64, 4, doublex);
+        var doubley_array: bigint[] = bigint_to_array(64, 4, doubley);
+
+        it('Testing pubx: ' + pubx + ' puby: ' + puby + ' doublex: ' + doublex + ' doubley: ' + doubley, async function() {
+            let witness = await circuit.calculateWitness({"in": [pubx_array, puby_array]});
+            expect(witness[1]).to.equal(doublex_array[0]);
+            expect(witness[2]).to.equal(doublex_array[1]);
+            expect(witness[3]).to.equal(doublex_array[2]);
+            expect(witness[4]).to.equal(doublex_array[3]); 
+            expect(witness[5]).to.equal(doubley_array[0]);
+            expect(witness[6]).to.equal(doubley_array[1]);
+            expect(witness[7]).to.equal(doubley_array[2]);
+            expect(witness[8]).to.equal(doubley_array[3]);
+            await circuit.checkConstraints(witness);
+        });
+    }
+
+    test_cases.forEach(test_secp256k1_double_instance);
+});
+
 // TODO: figure out some way to test that if point is not on curve, pf gen should fail
 describe("Secp256k1PointOnCurve", function () {
     this.timeout(1000 * 1000);
