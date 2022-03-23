@@ -65,22 +65,24 @@ describe("Secp256k1AddUnequal", function () {
         let sumx = test_case[4];
         let sumy = test_case[5];
 
-        var pub0x_array: bigint[] = bigint_to_array(86, 3, pub0x);
-        var pub0y_array: bigint[] = bigint_to_array(86, 3, pub0y);
-        var pub1x_array: bigint[] = bigint_to_array(86, 3, pub1x);
-        var pub1y_array: bigint[] = bigint_to_array(86, 3, pub1y);
-        var sumx_array: bigint[] = bigint_to_array(86, 3, sumx);
-        var sumy_array: bigint[] = bigint_to_array(86, 3, sumy);
+        var pub0x_array: bigint[] = bigint_to_array(64, 4, pub0x);
+        var pub0y_array: bigint[] = bigint_to_array(64, 4, pub0y);
+        var pub1x_array: bigint[] = bigint_to_array(64, 4, pub1x);
+        var pub1y_array: bigint[] = bigint_to_array(64, 4, pub1y);
+        var sumx_array: bigint[] = bigint_to_array(64, 4, sumx);
+        var sumy_array: bigint[] = bigint_to_array(64, 4, sumy);
 
         it('Testing pub0x: ' + pub0x + ' pub0y: ' + pub0y + ' pub1x: ' + pub1x + ' pub1y: ' + pub1y + ' sumx: ' + sumx + ' sumy: ' + sumy, async function() {
             let witness = await circuit.calculateWitness({"a": [pub0x_array, pub0y_array],
                                                           "b": [pub1x_array, pub1y_array]});
             expect(witness[1]).to.equal(sumx_array[0]);
             expect(witness[2]).to.equal(sumx_array[1]);
-            expect(witness[3]).to.equal(sumx_array[2]);
-            expect(witness[4]).to.equal(sumy_array[0]);
-            expect(witness[5]).to.equal(sumy_array[1]);
-            expect(witness[6]).to.equal(sumy_array[2]);
+            expect(witness[3]).to.equal(sumx_array[2]); 
+            expect(witness[4]).to.equal(sumx_array[3]); 
+            expect(witness[5]).to.equal(sumy_array[0]);
+            expect(witness[6]).to.equal(sumy_array[1]);
+            expect(witness[7]).to.equal(sumy_array[2]);
+            expect(witness[8]).to.equal(sumy_array[3]);
             await circuit.checkConstraints(witness);
         });
     }
