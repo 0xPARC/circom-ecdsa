@@ -94,7 +94,7 @@ async function run() {
     });
 
     const input = {
-        privkey: toWordArray(BigInt(privKeyStr), 3, 86),
+        privkey: toWordArray(BigInt(privKeyStr), 4, 64),
         addr1: groupAddresses[0],
         addr2: groupAddresses[1],
         addr3: groupAddresses[2],
