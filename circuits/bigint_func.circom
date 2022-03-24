@@ -230,9 +230,13 @@ function prod(n, k, a, b) {
 // computes a^e mod p
 function mod_exp(n, k, a, p, e) {
     var eBits[500]; // length is k * n
+    var bitLength = 0;
     for (var i = 0; i < k; i++) {
         for (var j = 0; j < n; j++) {
             eBits[j + n * i] = (e[i] >> j) & 1;
+            if (eBits[j + n * i] == 1) {
+                bitLength = j + n * i;
+            }
         }
     }
 
@@ -243,7 +247,7 @@ function mod_exp(n, k, a, p, e) {
     out[0] = 1;
 
     // repeated squaring
-    for (var i = k * n - 1; i >= 0; i--) {
+    for (var i = bitLength; i >= 0; i--) {
         // multiply by a if bit is 0
         if (eBits[i] == 1) {
             var temp[200]; // length 2 * k
@@ -261,7 +265,6 @@ function mod_exp(n, k, a, p, e) {
             temp2 = long_div(n, k, temp, p);
             out = temp2[1];
         }
-
     }
     return out;
 }
