@@ -13,7 +13,7 @@ Circuits can be found in `circuits`. `scripts` contains various utility scripts 
 - Run `yarn` at the top level to install npm dependencies (`snarkjs` and `circomlib`).
 - You'll also need `circom` version `>= 2.0.2` on your system. Installation instructions [here](https://docs.circom.io/getting-started/installation/).
 - If you want to build the `pubkeygen`, `eth_addr`, and `groupsig` circuits, you'll need to download a Powers of Tau file with `2^20` constraints and copy it into the `circuits` subdirectory of the project, with the name `pot20_final.ptau`. We do not provide such a file in this repo due to its large size. You can download and copy Powers of Tau files from the Hermez trusted setup from [this repository](https://github.com/iden3/snarkjs#7-prepare-phase-2).
-- If you want to build the `verify` circuits, you'll also need a Powers of Tau file that can support at least `2^24` constraints (place it in the same directory as above with the same naming convention).
+- If you want to build the `verify` circuits, you'll also need a Powers of Tau file that can support at least `2^21` constraints (place it in the same directory as above with the same naming convention).
 
 ## Building keys and witness generation files
 
