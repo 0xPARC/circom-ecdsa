@@ -29,23 +29,21 @@ Each of these will create a subdirectory inside a `build` directory at the top l
 
 This process will also generate and verify a proof for a dummy input in the respective `scripts/[circuit_name]` subdirectory, as a smoke test.
 
-## Benchmarks (OUTDATED)
+## Benchmarks
 
-We are in the process of rerunning benchmarks following a round of optimizations. The benchmarks below are stale; for example, pubkeygen has been optimized to under 100k constraints.
-
-Benchmarks for a previous version were run on a 20-core 3.3GHz, 64G RAM machine.  Building `verify` requires 56G of RAM.
+All benchmarks were run on a 16-core 3.0GHz, 32G RAM machine (AWS c5.4xlarge instance).
 
 ||pubkeygen|eth_addr|groupsig|verify|
 |---|---|---|---|---|
-|Constraints                          |416883 |568823 |571721 |9480361 |
-|Circuit compilation  	      	      |90s    |115s    |116s   |324s    |
-|Witness generation  	      	      |8s     |7s      |8s     |150s    |
-|Trusted setup phase 2 key generation |150s   |167s    |164s   |5569s   |
-|Trusted setup phase 2 contribution   |28s    |47s     |47s    |767s    |
-|Proving key size                     |254M   |347M    |349M   |5.8G    |
-|Proving key verification             |157s   |185s    |184s   |6211s   |
-|Proving time         		      |12s    |17s     |16s    |239s    |
-|Proof verification time              |<1s    |<1s     |<1s    |<1s     |
+|Constraints                          |95444 |247380 |250938 |1508136 |
+|Circuit compilation                  |21s   |47s    |48s    |70s     |
+|Witness generation                   |11s   |11s    |12s    |166s    |
+|Trusted setup phase 2 key generation |71s   |94s    |98s    |796s    |
+|Trusted setup phase 2 contribution   |9s    |20s    |19s    |139s    |
+|Proving key size                     |62M   |132M   |134M   |934M    |
+|Proving key verification             |61s   |81s    |80s    |723s    |
+|Proving time                         |3s    |7s     |6s     |45s     |
+|Proof verification time              |1s    |<1s    |1s     |1s      |
 
 ## Testing
 
