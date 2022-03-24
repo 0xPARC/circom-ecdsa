@@ -40,10 +40,16 @@ NODE_OPTIONS=--max_old_space_size=56000 npx snarkjs groth16 setup "$BUILD_DIR"/"
 end=`date +%s`
 echo "DONE ($((end-start))s)"
 
+echo "****CONTRIBUTE TO THE PAHSE 2 CEREMONY****"
+start=`date +%s`
+echo "test" | npx snarkjs zkey contribute "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey --name="1st Contributor Name"
+end=`date +%s`
+echo "DONE ($((end-start))s)"
+
 echo "****GENERATING FINAL ZKEY****"
 start=`date +%s`
 set -x
-NODE_OPTIONS=--max_old_space_size=56000 npx snarkjs zkey beacon "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME".zkey 0102030405060708090a0b0c0d0e0f101112231415161718221a1b1c1d1e1f 10 -n="Final Beacon phase2"
+NODE_OPTIONS=--max_old_space_size=56000 npx snarkjs zkey beacon "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey "$BUILD_DIR"/"$CIRCUIT_NAME".zkey 0102030405060708090a0b0c0d0e0f101112231415161718221a1b1c1d1e1f 10 -n="Final Beacon phase2"
 { set +x; } 2>/dev/null
 end=`date +%s`
 echo "DONE ($((end-start))s)"
