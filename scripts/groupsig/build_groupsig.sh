@@ -34,7 +34,7 @@ npx snarkjs groth16 setup "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DI
 end=`date +%s`
 echo "DONE ($((end-start))s)"
 
-echo "****CONTRIBUTE TO THE PAHSE 2 CEREMONY****"
+echo "****CONTRIBUTE TO THE PHASE 2 CEREMONY****"
 start=`date +%s`
 echo "test" | npx snarkjs zkey contribute "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey --name="1st Contributor Name"
 end=`date +%s`
