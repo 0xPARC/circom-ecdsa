@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PHASE1=../../circuits/pot24_final.ptau
+PHASE1=../../circuits/pot21_final.ptau
 BUILD_DIR=../../build/verify
 CIRCUIT_NAME=verify
 

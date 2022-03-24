@@ -12,7 +12,7 @@ include "secp256k1_func.circom";
 // keys are encoded as (x, y) pairs with each coordinate being
 // encoded with k registers of n bits each
 template ECDSAPrivToPub(n, k) {
-    var stride = 10;
+    var stride = 8;
     signal input privkey[k];
     signal output pubkey[2][k];
 
@@ -22,23 +22,18 @@ template ECDSAPrivToPub(n, k) {
         n2b[i].in <== privkey[i];
     }
 
-    var num_strides = 258 \ stride;
-    if (258 % stride > 0) {
-        num_strides = num_strides + 1;
-    }
+    var num_strides = div_ceil(n * k, stride);
     // power[i][j] contains: [j * (1 << stride * i) * G] for 1 <= j < (1 << stride)
-    var powers[258][1024][2][3];
-    powers = get_g_pow_stride10_table(86, 3, 258);
+    var powers[num_strides][2 ** stride][2][k];
+    powers = get_g_pow_stride8_table(n, k);
 
-    // contains a dummy point to stand in when we are adding 0
-    var dummy[2][3];
-    // dummy = (2 ** 258) * G
-    dummy[0][0] = 35872591715049374896265832;
-    dummy[0][1] = 6356226619579407084632810;
-    dummy[0][2] = 2978520823699096284322372;
-    dummy[1][0] = 26608736705833900595211029;
-    dummy[1][1] = 58274658945430015619912323;
-    dummy[1][2] = 4380191706425255173800171;
+    // contains a dummy point G * 2 ** 255 to stand in when we are adding 0
+    // this point is sometimes an input into AddUnequal, so it must be guaranteed
+    // to never equal any possible partial sum that we might get
+    var dummyHolder[2][100] = get_dummy_point(n, k);
+    var dummy[2][k];
+    for (var i = 0; i < k; i++) dummy[0][i] = dummyHolder[0][i];
+    for (var i = 0; i < k; i++) dummy[1][i] = dummyHolder[1][i];
 
     // selector[i] contains a value in [0, ..., 2**i - 1]
     component selectors[num_strides];
@@ -57,7 +52,7 @@ template ECDSAPrivToPub(n, k) {
 
     // multiplexers[i][l].out will be the coordinates of:
     // selectors[i].out * (2 ** (i * stride)) * G    if selectors[i].out is non-zero
-    // (2 ** 258) * G                                if selectors[i].out is zero
+    // (2 ** 255) * G                                if selectors[i].out is zero
     component multiplexers[num_strides][2];
     // select from k-register outputs using a 2 ** stride bit selector
     for (var i = 0; i < num_strides; i++) {

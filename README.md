@@ -12,8 +12,8 @@ Circuits can be found in `circuits`. `scripts` contains various utility scripts 
 
 - Run `yarn` at the top level to install npm dependencies (`snarkjs` and `circomlib`).
 - You'll also need `circom` version `>= 2.0.2` on your system. Installation instructions [here](https://docs.circom.io/getting-started/installation/).
-- If you want to build the `pubkeygen`, `eth_addr`, and `groupsig` circuits, you'll need to download a Powers of Tau file with `2^22` constraints and copy it into the `circuits` subdirectory of the project, with the name `pot22_final.ptau`. We do not provide such a file in this repo due to its large size. You can download and copy Powers of Tau files from the Hermez trusted setup from [this repository](https://github.com/iden3/snarkjs#7-prepare-phase-2).
-- If you want to build the `verify` circuits, you'll also need a Powers of Tau file that can support at least `2^24` constraints (place it in the same directory as above with the same naming convention).
+- If you want to build the `pubkeygen`, `eth_addr`, and `groupsig` circuits, you'll need to download a Powers of Tau file with `2^20` constraints and copy it into the `circuits` subdirectory of the project, with the name `pot20_final.ptau`. We do not provide such a file in this repo due to its large size. You can download and copy Powers of Tau files from the Hermez trusted setup from [this repository](https://github.com/iden3/snarkjs#7-prepare-phase-2).
+- If you want to build the `verify` circuits, you'll also need a Powers of Tau file that can support at least `2^21` constraints (place it in the same directory as above with the same naming convention).
 
 ## Building keys and witness generation files
 
@@ -29,9 +29,11 @@ Each of these will create a subdirectory inside a `build` directory at the top l
 
 This process will also generate and verify a proof for a dummy input in the respective `scripts/[circuit_name]` subdirectory, as a smoke test.
 
-## Benchmarks
+## Benchmarks (OUTDATED)
 
-All benchmarks were run on a 20-core 3.3GHz, 64G RAM machine.  Building `verify` requires 56G of RAM.
+We are in the process of rerunning benchmarks following a round of optimizations. The benchmarks below are stale; for example, pubkeygen has been optimized to under 100k constraints.
+
+Benchmarks for a previous version were run on a 20-core 3.3GHz, 64G RAM machine.  Building `verify` requires 56G of RAM.
 
 ||pubkeygen|eth_addr|groupsig|verify|
 |---|---|---|---|---|

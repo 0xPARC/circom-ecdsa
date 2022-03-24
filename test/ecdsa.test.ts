@@ -11,12 +11,11 @@ exports.p = Scalar.fromString("2188824287183927522224640574525727508854836440041
 const Fr = new F1Field(exports.p);
 
 function bigint_to_tuple(x: bigint) {
-    // 2 ** 86
-    let mod: bigint = 77371252455336267181195264n;
-    let ret: [bigint, bigint, bigint] = [0n, 0n, 0n];
+    let mod: bigint = 2n ** 64n;
+    let ret: [bigint, bigint, bigint, bigint] = [0n, 0n, 0n, 0n];
 
     var x_temp: bigint = x;
-    for (var idx = 0; idx < 3; idx++) {
+    for (var idx = 0; idx < ret.length; idx++) {
         ret[idx] = x_temp % mod;
         x_temp = x_temp / mod;
     }
@@ -61,18 +60,6 @@ describe("ECDSAPrivToPub", function () {
         circuit = await wasm_tester(path.join(__dirname, "circuits", "test_ecdsa.circom"));
     });
 
-    // each incremental witness computation does not require compilation
-    it("Default sample", async() => {
-        let witness = await circuit.calculateWitness({"privkey": ["7", "0", "0"]});
-        expect(Fr.e(Scalar.fromString(witness[1]))).to.equal(Fr.e(Scalar.fromString("59103311026955956754119100")));
-        expect(Fr.e(Scalar.fromString(witness[2]))).to.equal(Fr.e(Scalar.fromString("16432869926048670770133004")));
-        expect(Fr.e(Scalar.fromString(witness[3]))).to.equal(Fr.e(Scalar.fromString("7007383570325663759612303")));
-        expect(Fr.e(Scalar.fromString(witness[4]))).to.equal(Fr.e(Scalar.fromString("74838692406509378584339674")));
-        expect(Fr.e(Scalar.fromString(witness[5]))).to.equal(Fr.e(Scalar.fromString("64932989450846822570582095")));
-        expect(Fr.e(Scalar.fromString(witness[6]))).to.equal(Fr.e(Scalar.fromString("8078726494313086148292984")));
-        await circuit.checkConstraints(witness);
-    });
-
     // privkey, pub0, pub1
     var test_cases: Array<[bigint, bigint, bigint]> = [];
 
@@ -83,7 +70,8 @@ describe("ECDSAPrivToPub", function () {
                                    110977009687373213104962226057480551605828725303063265716157300460694423838923n];
 
 
-    for (var cnt = 1n; cnt < 2n ** 7n; cnt++) {
+    // 16 more keys
+    for (var cnt = 1n; cnt < 2n ** 4n; cnt++) {
         var privkey: bigint = get_strided_bigint(10n, 1n, cnt);
         privkeys.push(privkey);
     }
@@ -98,18 +86,20 @@ describe("ECDSAPrivToPub", function () {
         let pub0 = keys[1];
         let pub1 = keys[2];
 
-        var priv_tuple: [bigint, bigint, bigint] = bigint_to_tuple(privkey);
-        var pub0_tuple: [bigint, bigint, bigint] = bigint_to_tuple(pub0);
-        var pub1_tuple: [bigint, bigint, bigint] = bigint_to_tuple(pub1);
+        var priv_tuple: [bigint, bigint, bigint, bigint] = bigint_to_tuple(privkey);
+        var pub0_tuple: [bigint, bigint, bigint, bigint] = bigint_to_tuple(pub0);
+        var pub1_tuple: [bigint, bigint, bigint, bigint] = bigint_to_tuple(pub1);
 
         it('Testing privkey: ' + privkey + ' pubkey.x: ' + pub0 + ' pubkey.y: ' + pub1, async function() {
             let witness = await circuit.calculateWitness({"privkey": priv_tuple});
             expect(witness[1]).to.equal(pub0_tuple[0]);
             expect(witness[2]).to.equal(pub0_tuple[1]);
             expect(witness[3]).to.equal(pub0_tuple[2]);
-            expect(witness[4]).to.equal(pub1_tuple[0]);
-            expect(witness[5]).to.equal(pub1_tuple[1]);
-            expect(witness[6]).to.equal(pub1_tuple[2]);
+            expect(witness[4]).to.equal(pub0_tuple[3]);
+            expect(witness[5]).to.equal(pub1_tuple[0]);
+            expect(witness[6]).to.equal(pub1_tuple[1]);
+            expect(witness[7]).to.equal(pub1_tuple[2]);
+            expect(witness[8]).to.equal(pub1_tuple[3]);
             await circuit.checkConstraints(witness);
         });
     }
@@ -173,12 +163,12 @@ describe("ECDSAVerifyNoPubkeyCheck", function () {
             var s: Uint8Array = sig.slice(32, 64);
             var s_bigint:bigint = Uint8Array_to_bigint(s);
 
-            var priv_array: bigint[] = bigint_to_array(86, 3, privkey);
-            var r_array: bigint[] = bigint_to_array(86, 3, r_bigint);
-            var s_array: bigint[] = bigint_to_array(86, 3, s_bigint);
-            var msghash_array: bigint[] = bigint_to_array(86, 3, msghash_bigint);
-            var pub0_array: bigint[] = bigint_to_array(86, 3, pub0);
-            var pub1_array: bigint[] = bigint_to_array(86, 3, pub1);
+            var priv_array: bigint[] = bigint_to_array(64, 4, privkey);
+            var r_array: bigint[] = bigint_to_array(64, 4, r_bigint);
+            var s_array: bigint[] = bigint_to_array(64, 4, s_bigint);
+            var msghash_array: bigint[] = bigint_to_array(64, 4, msghash_bigint);
+            var pub0_array: bigint[] = bigint_to_array(64, 4, pub0);
+            var pub1_array: bigint[] = bigint_to_array(64, 4, pub1);
             var res = 1n;
 
             console.log('r', r_bigint);
@@ -199,12 +189,12 @@ describe("ECDSAVerifyNoPubkeyCheck", function () {
             var s: Uint8Array = sig.slice(32, 64);
             var s_bigint:bigint = Uint8Array_to_bigint(s);
 
-            var priv_array: bigint[] = bigint_to_array(86, 3, privkey);
-            var r_array: bigint[] = bigint_to_array(86, 3, r_bigint + 1n);
-            var s_array: bigint[] = bigint_to_array(86, 3, s_bigint);
-            var msghash_array: bigint[] = bigint_to_array(86, 3, msghash_bigint);
-            var pub0_array: bigint[] = bigint_to_array(86, 3, pub0);
-            var pub1_array: bigint[] = bigint_to_array(86, 3, pub1);
+            var priv_array: bigint[] = bigint_to_array(64, 4, privkey);
+            var r_array: bigint[] = bigint_to_array(64, 4, r_bigint + 1n);
+            var s_array: bigint[] = bigint_to_array(64, 4, s_bigint);
+            var msghash_array: bigint[] = bigint_to_array(64, 4, msghash_bigint);
+            var pub0_array: bigint[] = bigint_to_array(64, 4, pub0);
+            var pub1_array: bigint[] = bigint_to_array(64, 4, pub1);
             var res = 0n;
 
             console.log('r', r_bigint + 1n);

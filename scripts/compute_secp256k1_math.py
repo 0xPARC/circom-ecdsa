@@ -1,4 +1,5 @@
 import math
+import sys
 
 P = 2**256 - 2**32 - 977
 N = 115792089237316195423570985008687907852837564279074904382605163141518161494337
@@ -33,6 +34,7 @@ def add(x1, y1, x2, y2):
     rety = (P + lamb * (x1 - retx) - y1) % P
     return retx, rety
 
+# computes G^1, G^2, G^4, G^8, ..., G^2^exp
 def get_g_pows(exp):
     g_pows = []
     curr_x, curr_y = Gx, Gy
@@ -63,7 +65,8 @@ def get_binary(x):
         x = x // 2
     return ret
 
-def get_g_pow_val(g_pows, exp, n, k):
+# computes G^exp given precomputed G^1, G^2, G^4, G^8, etc.
+def get_g_pow_val(g_pows, exp):
     binary = get_binary(exp)
     is_nonzero = False
     curr_sum = None
@@ -80,49 +83,31 @@ def get_cache_str(n, k, stride):
     num_strides = math.ceil(n * k / stride);
     stride_cache_size = 2 ** stride
     ret_str = '''
-function get_g_pow_stride{}_table(n, k, exp) '''.format(stride)
+function get_g_pow_stride{}_table(n, k) '''.format(stride)
     ret_str = ret_str + '{'
     ret_str = ret_str + '''
-    assert(n == 86 && k == 3);
-    assert(exp >= 1 && exp <= 264);
-    var powers[{}][{}][2][3];
-'''.format(258, 1024);
-    EXP = 264
+    assert(n == {} && k == {});
+    var powers[{}][{}][2][{}];
+'''.format(n, k, num_strides, 2 ** stride, k)
+    EXP = 256 + stride
     g_pows = get_g_pows(EXP)
 
     for stride_idx in range(num_strides):
         for idx in range(2 ** stride):
             exp = idx * (2 ** (stride_idx * stride))
+            ret_append = '\n'
             if exp > 0:
-                g_pow = get_g_pow_val(g_pows, exp, n, k)
+                g_pow = get_g_pow_val(g_pows, exp)
                 long_g_pow = get_long(n, k, g_pow[0]), get_long(n, k, g_pow[1])
-                ret_append = '''
-    powers[{}][{}][0][0] = {};
-    powers[{}][{}][0][1] = {};
-    powers[{}][{}][0][2] = {};
-    powers[{}][{}][1][0] = {};
-    powers[{}][{}][1][1] = {};
-    powers[{}][{}][1][2] = {};
-'''.format(stride_idx, idx, long_g_pow[0][0],
-           stride_idx, idx, long_g_pow[0][1],
-           stride_idx, idx, long_g_pow[0][2],
-           stride_idx, idx, long_g_pow[1][0],
-           stride_idx, idx, long_g_pow[1][1],
-           stride_idx, idx, long_g_pow[1][2])
+                for reg_idx in range(k):
+                    ret_append += '    powers[{}][{}][0][{}] = {};\n'.format(stride_idx, idx, reg_idx, long_g_pow[0][reg_idx])
+                for reg_idx in range(k):
+                    ret_append += '    powers[{}][{}][1][{}] = {};\n'.format(stride_idx, idx, reg_idx, long_g_pow[1][reg_idx])
             elif exp == 0:
-                ret_append = '''
-    powers[{}][{}][0][0] = {};
-    powers[{}][{}][0][1] = {};
-    powers[{}][{}][0][2] = {};
-    powers[{}][{}][1][0] = {};
-    powers[{}][{}][1][1] = {};
-    powers[{}][{}][1][2] = {};
-'''.format(stride_idx, idx, 0,
-           stride_idx, idx, 0,
-           stride_idx, idx, 0,
-           stride_idx, idx, 0,
-           stride_idx, idx, 0,
-           stride_idx, idx, 0)
+                for reg_idx in range(k):
+                    ret_append += '    powers[{}][{}][0][{}] = 0;\n'.format(stride_idx, idx, reg_idx)
+                for reg_idx in range(k):
+                    ret_append += '    powers[{}][{}][1][{}] = 0;\n'.format(stride_idx, idx, reg_idx)
             ret_str = ret_str + ret_append
     ret_str = ret_str + '''
     return powers;
@@ -138,6 +123,11 @@ def get_ecdsa_func_str(n, k, stride_list):
         ret_str = ret_str + cache_str
     return ret_str
 
-stride_list = [10]
-ecdsa_func_str = get_ecdsa_func_str(86, 3, stride_list)
+stride_list = [8]
+ecdsa_func_str = get_ecdsa_func_str(64, 4, stride_list)
+
+orig_stdout = sys.stdout
+f = open('out.circom', 'w')
+sys.stdout = f
+
 print(ecdsa_func_str)

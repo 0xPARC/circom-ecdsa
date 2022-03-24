@@ -67,4 +67,4 @@ template Main(n, k) {
     msgAttestation <== mimcAttestation.outs[0];
 }
 
-component main {public [addr1, addr2, addr3, msg]} = Main(86, 3);
+component main {public [addr1, addr2, addr3, msg]} = Main(64, 4);

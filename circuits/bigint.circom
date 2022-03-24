@@ -172,47 +172,49 @@ template BigAdd(n, k) {
     out[k] <== unit[k - 2].carry;
 }
 
-// a[i] and b[i] are short unsigned integers
-// out[i] is a long unsigned integer
-template BigMultShortLong(n, k) {
-   assert(n <= 126);
-   signal input a[k];
-   signal input b[k];
-   signal output out[2 * k - 1];
+// a and b have n-bit registers
+// a has ka registers, each with NONNEGATIVE ma-bit values (ma can be > n)
+// b has kb registers, each with NONNEGATIVE mb-bit values (mb can be > n)
+// out has ka + kb - 1 registers, each with (ma + mb + ceil(log(max(ka, kb))))-bit values
+template BigMultNoCarry(n, ma, mb, ka, kb) {
+    assert(ma + mb <= 253);
+    signal input a[ka];
+    signal input b[kb];
+    signal output out[ka + kb - 1];
 
-   var prod_val[2 * k - 1];
-   for (var i = 0; i < 2 * k - 1; i++) {
-       prod_val[i] = 0;
-       if (i < k) {
-           for (var a_idx = 0; a_idx <= i; a_idx++) {
-               prod_val[i] = prod_val[i] + a[a_idx] * b[i - a_idx];
-           }
-       } else {
-           for (var a_idx = i - k + 1; a_idx < k; a_idx++) {
-               prod_val[i] = prod_val[i] + a[a_idx] * b[i - a_idx];
-           }
-       }
-       out[i] <-- prod_val[i];
-   }
+    var prod_val[ka + kb - 1];
+    for (var i = 0; i < ka + kb - 1; i++) {
+        prod_val[i] = 0;
+    }
+    for (var i = 0; i < ka; i++) {
+        for (var j = 0; j < kb; j++) {
+            prod_val[i + j] += a[i] * b[j];
+        }
+    }
+    for (var i = 0; i < ka + kb - 1; i++) {
+        out[i] <-- prod_val[i];
+    }
 
-   var a_poly[2 * k - 1];
-   var b_poly[2 * k - 1];
-   var out_poly[2 * k - 1];
-   for (var i = 0; i < 2 * k - 1; i++) {
-       out_poly[i] = 0;
-       a_poly[i] = 0;
-       b_poly[i] = 0;
-       for (var j = 0; j < 2 * k - 1; j++) {
-           out_poly[i] = out_poly[i] + out[j] * (i ** j);
-       }
-       for (var j = 0; j < k; j++) {
-           a_poly[i] = a_poly[i] + a[j] * (i ** j);
-           b_poly[i] = b_poly[i] + b[j] * (i ** j);
-       }
-   }
-   for (var i = 0; i < 2 * k - 1; i++) {
-      out_poly[i] === a_poly[i] * b_poly[i];
-   }
+    var a_poly[ka + kb - 1];
+    var b_poly[ka + kb - 1];
+    var out_poly[ka + kb - 1];
+    for (var i = 0; i < ka + kb - 1; i++) {
+        out_poly[i] = 0;
+        a_poly[i] = 0;
+        b_poly[i] = 0;
+        for (var j = 0; j < ka + kb - 1; j++) {
+            out_poly[i] = out_poly[i] + out[j] * (i ** j);
+        }
+        for (var j = 0; j < ka; j++) {
+            a_poly[i] = a_poly[i] + a[j] * (i ** j);
+        }
+        for (var j = 0; j < kb; j++) {
+            b_poly[i] = b_poly[i] + b[j] * (i ** j);
+        }
+    }
+    for (var i = 0; i < ka + kb - 1; i++) {
+        out_poly[i] === a_poly[i] * b_poly[i];
+    }
 }
 
 
@@ -277,7 +279,7 @@ template BigMult(n, k) {
     signal input b[k];
     signal output out[2 * k];
 
-    component mult = BigMultShortLong(n, k);
+    component mult = BigMultNoCarry(n, n, n, k, k);
     for (var i = 0; i < k; i++) {
         mult.a[i] <== a[i];
         mult.b[i] <== b[i];
@@ -339,6 +341,24 @@ template BigLessThan(n, k){
      out <== ors[0].out;
 }
 
+template BigIsEqual(k){
+    signal input in[2][k];
+    signal output out;
+    component isEqual[k+1];
+    var sum = 0;
+    for(var i = 0; i < k; i++){
+        isEqual[i] = IsEqual();
+        isEqual[i].in[0] <== in[0][i];
+        isEqual[i].in[1] <== in[1][i];
+        sum = sum + isEqual[i].out;
+    }
+
+    isEqual[k] = IsEqual();
+    isEqual[k].in[0] <== sum;
+    isEqual[k].in[1] <== k;
+    out <== isEqual[k].out;
+}
+
 // leading register of b should be non-zero
 template BigMod(n, k) {
     assert(n <= 126);
@@ -348,7 +368,7 @@ template BigMod(n, k) {
     signal output div[k + 1];
     signal output mod[k];
 
-    var longdiv[2][100] = long_div(n, k, a, b);
+    var longdiv[2][100] = long_div(n, k, k, a, b);
     for (var i = 0; i < k; i++) {
         div[i] <-- longdiv[0][i];
         mod[i] <-- longdiv[1][i];
@@ -510,4 +530,32 @@ template BigModInv(n, k) {
     for (var i = 1; i < k; i++) {
         mod.mod[i] === 0;
     }
+}
+
+// in[i] contains values in the range -2^(m-1) to 2^(m-1)
+// constrain that in[] as a big integer is zero
+// each limbs is n bits
+template CheckCarryToZero(n, m, k) {
+    assert(k >= 2);
+    
+    var EPSILON = 3;
+    
+    signal input in[k];
+    
+    signal carry[k];
+    component carryRangeChecks[k];
+    for (var i = 0; i < k-1; i++){
+        carryRangeChecks[i] = Num2Bits(m + EPSILON - n); 
+        if( i == 0 ){
+            carry[i] <-- in[i] / (1<<n);
+            in[i] === carry[i] * (1<<n);
+        }
+        else{
+            carry[i] <-- (in[i]+carry[i-1]) / (1<<n);
+            in[i] + carry[i-1] === carry[i] * (1<<n);
+        }
+        // checking carry is in the range of - 2^(m-n-1+eps), 2^(m+-n-1+eps)
+        carryRangeChecks[i].in <== carry[i] + ( 1<< (m + EPSILON - n - 1));
+    }
+    in[k-1] + carry[k-2] === 0;   
 }

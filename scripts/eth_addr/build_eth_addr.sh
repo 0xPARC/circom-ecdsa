@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PHASE1=../../circuits/pot22_final.ptau
+PHASE1=../../circuits/pot20_final.ptau
 BUILD_DIR=../../build/eth_addr
 CIRCUIT_NAME=eth_addr
 
