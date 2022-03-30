@@ -26,17 +26,13 @@ echo "DONE ($((end-start))s)"
 
 echo "****GENERATING WITNESS FOR SAMPLE INPUT****"
 start=`date +%s`
-set -x
 node "$BUILD_DIR"/"$CIRCUIT_NAME"_js/generate_witness.js "$BUILD_DIR"/"$CIRCUIT_NAME"_js/"$CIRCUIT_NAME".wasm input_verify.json "$BUILD_DIR"/witness.wtns
-{ set +x; } 2>/dev/null
 end=`date +%s`
 echo "DONE ($((end-start))s)"
 
 echo "****GENERATING ZKEY 0****"
 start=`date +%s`
-set -x
-NODE_OPTIONS=--max_old_space_size=56000 npx snarkjs groth16 setup "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
-{ set +x; } 2>/dev/null
+npx snarkjs groth16 setup "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME"_0.zkey
 end=`date +%s`
 echo "DONE ($((end-start))s)"
 
@@ -48,40 +44,30 @@ echo "DONE ($((end-start))s)"
 
 echo "****GENERATING FINAL ZKEY****"
 start=`date +%s`
-set -x
-NODE_OPTIONS=--max_old_space_size=56000 npx snarkjs zkey beacon "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey "$BUILD_DIR"/"$CIRCUIT_NAME".zkey 0102030405060708090a0b0c0d0e0f101112231415161718221a1b1c1d1e1f 10 -n="Final Beacon phase2"
-{ set +x; } 2>/dev/null
+npx snarkjs zkey beacon "$BUILD_DIR"/"$CIRCUIT_NAME"_1.zkey "$BUILD_DIR"/"$CIRCUIT_NAME".zkey 0102030405060708090a0b0c0d0e0f101112231415161718221a1b1c1d1e1f 10 -n="Final Beacon phase2"
 end=`date +%s`
 echo "DONE ($((end-start))s)"
 
 echo "****VERIFYING FINAL ZKEY****"
 start=`date +%s`
-set -x
-NODE_OPTIONS=--max_old_space_size=56000 npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME".zkey
-{ set +x; } 2>/dev/null
+npx snarkjs zkey verify "$BUILD_DIR"/"$CIRCUIT_NAME".r1cs "$PHASE1" "$BUILD_DIR"/"$CIRCUIT_NAME".zkey
 end=`date +%s`
 echo "DONE ($((end-start))s)"
 
 echo "** Exporting vkey"
 start=`date +%s`
-set -x
-NODE_OPTIONS=--max_old_space_size=56000 npx snarkjs zkey export verificationkey "$BUILD_DIR"/"$CIRCUIT_NAME".zkey "$BUILD_DIR"/vkey.json
+npx snarkjs zkey export verificationkey "$BUILD_DIR"/"$CIRCUIT_NAME".zkey "$BUILD_DIR"/vkey.json
 end=`date +%s`
-{ set +x; } 2>/dev/null
 echo "DONE ($((end-start))s)"
 
 echo "****GENERATING PROOF FOR SAMPLE INPUT****"
 start=`date +%s`
-set -x
 npx snarkjs groth16 prove "$BUILD_DIR"/"$CIRCUIT_NAME".zkey "$BUILD_DIR"/witness.wtns "$BUILD_DIR"/proof.json "$BUILD_DIR"/public.json
-{ set +x; } 2>/dev/null
 end=`date +%s`
 echo "DONE ($((end-start))s)"
 
 echo "****VERIFYING PROOF FOR SAMPLE INPUT****"
 start=`date +%s`
-set -x
-NODE_OPTIONS=--max_old_space_size=56000 npx snarkjs groth16 verify "$BUILD_DIR"/vkey.json "$BUILD_DIR"/public.json "$BUILD_DIR"/proof.json
+npx snarkjs groth16 verify "$BUILD_DIR"/vkey.json "$BUILD_DIR"/public.json "$BUILD_DIR"/proof.json
 end=`date +%s`
-{ set +x; } 2>/dev/null
 echo "DONE ($((end-start))s)"
