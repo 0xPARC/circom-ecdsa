@@ -29,6 +29,16 @@ Each of these will create a subdirectory inside a `build` directory at the top l
 
 This process will also generate and verify a proof for a dummy input in the respective `scripts/[circuit_name]` subdirectory, as a smoke test.
 
+## Circuits Description
+
+The following circuits are implemented and can be found in `circuits/ecdsa.circom`.
+* `ECDSAPrivToPub`: Given a secp256k1 private key, outputs the corresponding public key by computing `(private_key) * G` where `G` is the base point of secp256k1.
+* `ECDSAVerifyNoPubkeyCheck`: Given a signature `(r, s)`, a message hash, and a secp256k1 public key, it follows ecdsa verification algorithm to extract `r'` from `s`, message hash and public key, and then compares `r'` with `r` to see if the signaure is correct. The output result is `1` if `r'` and `r` are equal, `0` otherwise.
+
+The 256-bits input and output are chunked and represented as `k` `n`-bits values where `k` is `4` and `n` is `64`. Please see above examples for concrete usages.
+
+WARNING: Beware that the input to the above circuits should be properly checked and guarded (Lies on the curve, not equal to zero, etc). The purpose of the above circuits is to serve as building blocks but not as stand alone circuits to deploy.
+
 ## Benchmarks
 
 All benchmarks were run on a 16-core 3.0GHz, 32G RAM machine (AWS c5.4xlarge instance).
