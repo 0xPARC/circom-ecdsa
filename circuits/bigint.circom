@@ -172,6 +172,31 @@ template BigAdd(n, k) {
     out[k] <== unit[k - 2].carry;
 }
 
+template BigAddNoCarry(n, k) {
+    assert(n <= 252);
+    signal input a[k];
+    signal input b[k];
+    signal output out[k];
+
+    component unit0 = ModSum(n);
+    unit0.a <== a[0];
+    unit0.b <== b[0];
+    out[0] <== unit0.sum;
+
+    component unit[k - 1];
+    for (var i = 1; i < k; i++) {
+        unit[i - 1] = ModSumThree(n);
+        unit[i - 1].a <== a[i];
+        unit[i - 1].b <== b[i];
+        if (i == 1) {
+            unit[i - 1].c <== unit0.carry;
+        } else {
+            unit[i - 1].c <== unit[i - 2].carry;
+        }
+        out[i] <== unit[i - 1].sum;
+    }
+}
+
 // a and b have n-bit registers
 // a has ka registers, each with NONNEGATIVE ma-bit values (ma can be > n)
 // b has kb registers, each with NONNEGATIVE mb-bit values (mb can be > n)
@@ -466,7 +491,7 @@ template BigSubModP(n, k){
     }
     signal flag;
     flag <== sub.underflow;
-    component add = BigAdd(n, k);
+    component add = BigAddNoCarry(n, k);
     for (var i = 0; i < k; i++){
         add.a[i] <== sub.out[i];
         add.b[i] <== p[i];
@@ -519,21 +544,15 @@ template BigModInv(n, k) {
         range_checks[i].in <== out[i];
     }
 
-    component mult = BigMult(n, k);
+    component multmod = BigMultModP(n, k);
     for (var i = 0; i < k; i++) {
-        mult.a[i] <== in[i];
-        mult.b[i] <== out[i];
+        multmod.a[i] <== in[i];
+        multmod.b[i] <== out[i];
+        multmod.p[i] <== p[i];
     }
-    component mod = BigMod(n, k);
-    for (var i = 0; i < 2 * k; i++) {
-        mod.a[i] <== mult.out[i];
-    }
-    for (var i = 0; i < k; i++) {
-        mod.b[i] <== p[i];
-    }
-    mod.mod[0] === 1;
+    multmod.out[0] === 1;
     for (var i = 1; i < k; i++) {
-        mod.mod[i] === 0;
+        multmod.out[i] === 0;
     }
 }
 
@@ -542,15 +561,15 @@ template BigModInv(n, k) {
 // each limbs is n bits
 template CheckCarryToZero(n, m, k) {
     assert(k >= 2);
-    
+
     var EPSILON = 3;
-    
+
     signal input in[k];
-    
+
     signal carry[k];
     component carryRangeChecks[k];
     for (var i = 0; i < k-1; i++){
-        carryRangeChecks[i] = Num2Bits(m + EPSILON - n); 
+        carryRangeChecks[i] = Num2Bits(m + EPSILON - n);
         if( i == 0 ){
             carry[i] <-- in[i] / (1<<n);
             in[i] === carry[i] * (1<<n);
@@ -562,5 +581,5 @@ template CheckCarryToZero(n, m, k) {
         // checking carry is in the range of - 2^(m-n-1+eps), 2^(m+-n-1+eps)
         carryRangeChecks[i].in <== carry[i] + ( 1<< (m + EPSILON - n - 1));
     }
-    in[k-1] + carry[k-2] === 0;   
+    in[k-1] + carry[k-2] === 0;
 }
