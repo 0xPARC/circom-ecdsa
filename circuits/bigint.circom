@@ -559,7 +559,7 @@ template CheckCarryToZero(n, m, k) {
             carry[i] <-- (in[i]+carry[i-1]) / (1<<n);
             in[i] + carry[i-1] === carry[i] * (1<<n);
         }
-        // checking carry is in the range of - 2^(m-n-1+eps), 2^(m+-n-1+eps)
+        // checking carry is in the range of - 2^(m-n-1+eps), 2^(m-n-1+eps)
         carryRangeChecks[i].in <== carry[i] + ( 1<< (m + EPSILON - n - 1));
     }
     in[k-1] + carry[k-2] === 0;   

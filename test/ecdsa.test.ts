@@ -210,3 +210,41 @@ describe("ECDSAVerifyNoPubkeyCheck", function () {
 
     test_cases.forEach(test_ecdsa_verify);
 });
+
+
+describe("ECDSACheckPubKey", function () {
+    this.timeout(1000 * 1000);
+
+    var test_cases: Array<[bigint, bigint]> = [];
+    var privkeys: Array<bigint> = [
+        88549154299169935420064281163296845505587953610183896504176354567359434168161n,
+        37706893564732085918706190942542566344879680306879183356840008504374628845468n,
+        90388020393783788847120091912026443124559466591761394939671630294477859800601n,
+        110977009687373213104962226057480551605828725303063265716157300460694423838923n
+    ];
+
+    for (var idx = 0; idx < privkeys.length; idx++) {
+        var pubkey: Point = Point.fromPrivateKey(privkeys[idx]);
+        test_cases.push([pubkey.x, pubkey.y]);
+    }
+
+    let circuit: any;
+    before(async function () {
+        circuit = await wasm_tester(path.join(__dirname, "circuits", "test_ecdsa_check_pub_key.circom"));
+    });
+
+    var test_ecdsa_verify = function (test_case: [bigint, bigint]) {
+        let pub0 = test_case[0];
+        let pub1 = test_case[1];
+        
+        
+        var pub0_array: bigint[] = bigint_to_array(64, 4, pub0);
+        var pub1_array: bigint[] = bigint_to_array(64, 4, pub1);
+        it('Testing valid pub key: pub0: ' + pub0 + ' pub1: ' + pub1, async function() {
+            let witness = await circuit.calculateWitness({"pubkey": [pub0_array, pub1_array]});
+            await circuit.checkConstraints(witness);
+        });
+    }
+
+    test_cases.forEach(test_ecdsa_verify);
+});
