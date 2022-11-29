@@ -467,10 +467,8 @@ template BigSubModP(n, k){
         add.a[i] <== sub.out[i];
         add.b[i] <== p[i];
     }
-    signal tmp[k];
     for (var i = 0; i < k; i++){
-        tmp[i] <== (1 - flag) * sub.out[i];
-        out[i] <== tmp[i] + flag * add.out[i];
+        out[i] <== sub.out[i] + flag * (add.out[i] - sub.out[i]);
     }
 }
 
