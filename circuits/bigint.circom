@@ -394,7 +394,7 @@ template BigMod(n, k) {
     mul.b[k] <== 0;
 
     component add = BigAdd(n, 2 * k + 2);
-    for (var i = 0; i < 2 * k; i++) {
+    for (var i = 0; i < 2 * k + 2; i++) {
         add.a[i] <== mul.out[i];
         if (i < k) {
             add.b[i] <== mod[i];
@@ -402,10 +402,6 @@ template BigMod(n, k) {
             add.b[i] <== 0;
         }
     }
-    add.a[2 * k] <== mul.out[2 * k];
-    add.a[2 * k + 1] <== mul.out[2 * k + 1];
-    add.b[2 * k] <== 0;
-    add.b[2 * k + 1] <== 0;
 
     for (var i = 0; i < 2 * k; i++) {
         add.out[i] === a[i];
