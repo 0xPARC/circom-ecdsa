@@ -300,45 +300,29 @@ template BigLessThan(n, k){
     signal input b[k];
     signal output out;
 
+    var a_lt = 0; // bit string representing registers where a > b
+    var b_lt = (1 << k) - 1;
+
     component lt[k];
     component eq[k];
     for (var i = 0; i < k; i++) {
         lt[i] = LessThan(n);
         lt[i].in[0] <== a[i];
         lt[i].in[1] <== b[i];
+
         eq[i] = IsEqual();
         eq[i].in[0] <== a[i];
         eq[i].in[1] <== b[i];
+
+        var e = 1 << i;
+        a_lt += lt[i].out * e;
+        b_lt -= (eq[i].out + lt[i].out) * e;
     }
 
-    // ors[i] holds (lt[k - 1] || (eq[k - 1] && lt[k - 2]) .. || (eq[k - 1] && .. && lt[i]))
-    // ands[i] holds (eq[k - 1] && .. && lt[i])
-    // eq_ands[i] holds (eq[k - 1] && .. && eq[i])
-    component ors[k - 1];
-    component ands[k - 1];
-    component eq_ands[k - 1];
-    for (var i = k - 2; i >= 0; i--) {
-        ands[i] = AND();
-        eq_ands[i] = AND();
-        ors[i] = OR();
-
-        if (i == k - 2) {
-           ands[i].a <== eq[k - 1].out;
-           ands[i].b <== lt[k - 2].out;
-           eq_ands[i].a <== eq[k - 1].out;
-           eq_ands[i].b <== eq[k - 2].out;
-           ors[i].a <== lt[k - 1].out;
-           ors[i].b <== ands[i].out;
-        } else {
-           ands[i].a <== eq_ands[i + 1].out;
-           ands[i].b <== lt[i].out;
-           eq_ands[i].a <== eq_ands[i + 1].out;
-           eq_ands[i].b <== eq[i].out;
-           ors[i].a <== ors[i + 1].out;
-           ors[i].b <== ands[i].out;
-        }
-     }
-     out <== ors[0].out;
+    component lt_bitstring = LessThan(k);
+    lt_bitstring.in[0] <== b_lt;
+    lt_bitstring.in[1] <== a_lt;
+    out <== lt_bitstring.out;
 }
 
 template BigIsEqual(k){
@@ -394,7 +378,7 @@ template BigMod(n, k) {
     mul.b[k] <== 0;
 
     component add = BigAdd(n, 2 * k + 2);
-    for (var i = 0; i < 2 * k; i++) {
+    for (var i = 0; i < 2 * k + 2; i++) {
         add.a[i] <== mul.out[i];
         if (i < k) {
             add.b[i] <== mod[i];
@@ -402,10 +386,6 @@ template BigMod(n, k) {
             add.b[i] <== 0;
         }
     }
-    add.a[2 * k] <== mul.out[2 * k];
-    add.a[2 * k + 1] <== mul.out[2 * k + 1];
-    add.b[2 * k] <== 0;
-    add.b[2 * k + 1] <== 0;
 
     for (var i = 0; i < 2 * k; i++) {
         add.out[i] === a[i];
@@ -471,10 +451,8 @@ template BigSubModP(n, k){
         add.a[i] <== sub.out[i];
         add.b[i] <== p[i];
     }
-    signal tmp[k];
     for (var i = 0; i < k; i++){
-        tmp[i] <== (1 - flag) * sub.out[i];
-        out[i] <== tmp[i] + flag * add.out[i];
+        out[i] <== sub.out[i] + flag * (add.out[i] - sub.out[i]);
     }
 }
 
