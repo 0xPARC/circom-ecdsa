@@ -35,22 +35,20 @@ template ModSub(n) {
 }
 
 // a - b - c
-// assume a - b - c + 2**n >= 0
+// checks a - b - c + 2**n >= 0
 template ModSubThree(n) {
     assert(n + 2 <= 253);
     signal input a;
     signal input b;
     signal input c;
-    assert(a - b - c + (1 << n) >= 0);
     signal output out;
     signal output borrow;
-    signal b_plus_c;
-    b_plus_c <== b + c;
-    component lt = LessThan(n + 1);
-    lt.in[0] <== a;
-    lt.in[1] <== b_plus_c;
-    borrow <== lt.out;
-    out <== borrow * (1 << n) + a - b_plus_c;
+    
+    component n2b = Num2Bits(n+2);
+    n2b.in <== (1 << (n + 1)) + a - b - c;
+    n2b.out[n+1] + n2b.out[n] === 1;
+    borrow <== 1 - n2b.out[n+1]; 
+    out <== borrow * (1 << n) + a - b - c;
 }
 
 template ModSumThree(n) {
