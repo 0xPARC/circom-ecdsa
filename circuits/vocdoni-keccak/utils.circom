@@ -1,7 +1,7 @@
 pragma circom 2.0.2;
 
 include "../../node_modules/circomlib/circuits/gates.circom";
-include "../../node_modules/circomlib/circuits/sha256/xor3.circom";
+include "../../node_modules/circomlib/circuits/bitify.circom";
 include "../../node_modules/circomlib/circuits/sha256/shift.circom"; // contains ShiftRight
 
 template Xor5(n) {
@@ -13,24 +13,11 @@ template Xor5(n) {
     signal output out[n];
     var i;
     
-    component xor3 = Xor3(n);
+   component xor5[n];
     for (i=0; i<n; i++) {
-        xor3.a[i] <== a[i];
-        xor3.b[i] <== b[i];
-        xor3.c[i] <== c[i];
-    }
-    component xor4 = XorArray(n);
-    for (i=0; i<n; i++) {
-        xor4.a[i] <== xor3.out[i];
-        xor4.b[i] <== d[i];
-    }
-    component xor5 = XorArray(n);
-    for (i=0; i<n; i++) {
-        xor5.a[i] <== xor4.out[i];
-        xor5.b[i] <== e[i];
-    }
-    for (i=0; i<n; i++) {
-        out[i] <== xor5.out[i];
+    xor5[i] = Num2Bits(3);
+    xor5[i].in <== (a[i] + b[i] + c[i] + d[i] + e[i]);
+    out[i] <== xor5[i].out[0];
     }
 }
 
